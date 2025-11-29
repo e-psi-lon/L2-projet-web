@@ -1,28 +1,30 @@
 export function el(tag, props = {}, ...children) {
-  const element = document.createElement(tag)
+	const element = document.createElement(tag)
 
-  Object.entries(props).forEach(([key, value]) => {
-    if (key === 'className' && typeof value === 'string')
-      element.className = value
-    if (key === 'className' && Array.isArray(value))
-        element.className = value.filter(Boolean).join(' ')
-    else if (key === 'style' && typeof value === 'object')
-      Object.assign(element.style, value)
-    else if (key.startsWith('on') && typeof value === 'function') {
-      const eventName = key.slice(2).toLowerCase()
-      element.addEventListener(eventName, value)
-    } else if (value != null)
-      element.setAttribute(key, value.toString())
-  })
+	Object.entries(props).forEach(([key, value]) => {
+		if (key === 'className' && typeof value === 'string')
+			element.className = value
+		else if (key === 'className' && Array.isArray(value))
+			element.className = value.filter(Boolean).join(' ')
+		else if (key === 'style' && typeof value === 'object')
+			Object.assign(element.style, value)
+		else if (key.startsWith('on') && typeof value === 'function') {
+			const eventName = key.slice(2).toLowerCase()
+			element.addEventListener(eventName, value)
+		} else if (key === 'checked' || key === 'disabled' || key === 'selected')
+			element[key] = value
+		else if (value != null)
+			element.setAttribute(key, value.toString())
+	})
 
-  children.flat().forEach(child => {
-    if (child != null)
-      if (typeof child === 'string' || typeof child === 'number')
-        element.appendChild(document.createTextNode(child.toString()))
-      else
-        element.appendChild(child)
-  })
-  return element
+	children.flat().forEach(child => {
+		if (child != null)
+			if (typeof child === 'string' || typeof child === 'number')
+				element.appendChild(document.createTextNode(child.toString()))
+			else
+				element.appendChild(child)
+	})
+	return element
 }
 
 export const div = (props = {}, ...children) => el('div', props, ...children)
@@ -51,17 +53,3 @@ export const article = (props = {}, ...children) => el('article', props, ...chil
 export const strong = (props = {}, ...children) => el('strong', props, ...children)
 export const em = (props = {}, ...children) => el('em', props, ...children)
 export const code = (props = {}, ...children) => el('code', props, ...children)
-
-export function append(parent, ...children) {
-  children.flat().forEach(child => {
-    if (child != null) {
-      if (typeof child === 'string' || typeof child === 'number') {
-        parent.appendChild(document.createTextNode(child.toString()))
-      } else {
-        parent.appendChild(child)
-      }
-    }
-  })
-  return parent
-}
-
