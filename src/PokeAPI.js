@@ -64,7 +64,7 @@ export default class PokeAPI {
 		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
 		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
 		const endpoint = offset === 0 ? `generation?limit=${limit}` : `generation?limit=${limit}&offset=${offset}`;
-		return (await this.get('generation')).results;
+		return (await this.get(endpoint)).results;
 	}
 
 	getGenerationId(generation) {
@@ -81,7 +81,7 @@ export default class PokeAPI {
 		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
 		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
 		const endpoint = offset === 0 ? `region?limit=${limit}` : `region?limit=${limit}&offset=${offset}`;
-		return (await this.get('region')).results;
+		return (await this.get(endpoint)).results;
 	}
 
 	async getRegion(name) {
