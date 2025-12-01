@@ -24,9 +24,23 @@ const api = new PokeAPI();
 		generation.id = api.getGenerationId(generation);
 		generation.realName = `Gen ${generation.id}`
 	}
+	const abilityCount = await api.getAbilityCount();
+	const abilities = await api.getAbilities(abilityCount);
+	for (const ability of abilities) ability.id = api.getAbilityId(ability);
+	console.log(abilities);
+	const colors = await api.getColors();
+	for (const color of colors) color.id = api.getColorId(color);
+	console.log(colors);
+	const habitats = await api.getHabitats();
+	for (const habitat of habitats) habitat.id = api.getHabitatId(habitat);
+	console.log(habitats);
+
 	let filterType = fullPokemonLists;
 	let filterGeneration = fullPokemonLists;
 	let filterRegion = fullPokemonLists;
+	let filterAbility = fullPokemonLists;
+	let filterColor = fullPokemonLists;
+	let filterHabitat = fullPokemonLists;
 
 	const cardContainer = div({
 		id: 'card-container',
@@ -34,7 +48,7 @@ const api = new PokeAPI();
 	});
 
 	const updatePokemon = () => {
-		pokemon = applyAllFilters(fullPokemonLists, filterType, filterGeneration, filterRegion);
+		pokemon = applyAllFilters(fullPokemonLists, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
 		PokemonCards(cardContainer, pokemon, search, api, CARD_CLASSES);
 	};
 
@@ -102,6 +116,39 @@ const api = new PokeAPI();
 					},
 						option({ value: '' }, 'All regions'),
 						...regions.map(r => option({ value: r.name }, capitalize(r.name)))
+					),
+					select({
+							className: FILTER_SELECT_CLASSES,
+							onChange: async (e) => {
+								const ability = e.target.value;
+								filterAbility = ability === '' ? fullPokemonLists : (await api.getAbility(parseInt(ability))).pokemon.map(p => p.pokemon);
+								updatePokemon();
+							}
+						},
+						option({ value: '' }, 'All abilities'),
+						...abilities.map(a => option({ value: a.id }, capitalize(a.name)))
+					),
+					select({
+							className: FILTER_SELECT_CLASSES,
+							onChange: async (e) => {
+								const color = e.target.value;
+								filterColor = color === '' ? fullPokemonLists : (await api.getColor(parseInt(color))).pokemon_species;
+								updatePokemon();
+							}
+						},
+						option({ value: '' }, 'All colors'),
+						...colors.map(c => option({ value: c.id }, capitalize(c.name)))
+					),
+					select({
+							className: FILTER_SELECT_CLASSES,
+							onChange: async (e) => {
+								const habitat = e.target.value;
+								filterHabitat = habitat === '' ? fullPokemonLists : (await api.getHabitat(parseInt(habitat))).pokemon_species;
+								updatePokemon();
+							}
+						},
+						option({ value: '' }, 'All habitats'),
+						...habitats.map(h => option({ value: h.id }, capitalize(h.name)))
 					)
 				)
 			),

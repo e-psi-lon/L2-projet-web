@@ -93,4 +93,59 @@ export default class PokeAPI {
 		if (typeof id !== 'number') throw new Error('ID must be a number');
 		return await this.get(`pokedex/${id}`);
 	}
+
+	async getAbilityCount() {
+		return (await this.get('ability?limit=1')).count;
+	}
+
+	async getAbilities(limit = 100, offset = 0) {
+		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
+		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
+		const endpoint = offset === 0 ? `ability?limit=${limit}` : `ability?limit=${limit}&offset=${offset}`;
+		return (await this.get(endpoint)).results;
+	}
+
+	getAbilityId(ability) {
+		if (typeof ability !== 'object' && typeof ability.url !== 'string') throw new Error('Invalid ability object');
+		return parseInt(ability.url.split('/').filter(Boolean).pop(), 10);
+	}
+
+	async getAbility(id) {
+		if (typeof id !== 'number') throw new Error('ID must be a number');
+		return await this.get(`ability/${id}`);
+	}
+
+	async getColors(limit = 100, offset = 0)  {
+		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
+		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
+		const endpoint = offset === 0 ? `pokemon-color?limit=${limit}` : `ability?limit=${limit}&offset=${offset}`;
+		return (await this.get(endpoint)).results;
+	}
+
+	getColorId(color) {
+		if (typeof color !== 'object' && typeof color.url !== 'string') throw new Error('Invalid color object');
+		return parseInt(color.url.split('/').filter(Boolean).pop(), 10);
+	}
+
+	async getColor(id) {
+		if (typeof id !== 'number') throw new Error('ID must be a number');
+		return await this.get(`pokemon-color/${id}`);
+	}
+
+	async getHabitats(limit = 100, offset = 0)  {
+		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
+		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
+		const endpoint = offset === 0 ? `pokemon-habitat?limit=${limit}` : `ability?limit=${limit}&offset=${offset}`;
+		return (await this.get(endpoint)).results;
+	}
+
+	getHabitatId(habitat) {
+		if (typeof habitat !== 'object' && typeof habitat.url !== 'string') throw new Error('Invalid habitat object');
+		return parseInt(habitat.url.split('/').filter(Boolean).pop(), 10);
+	}
+
+	async getHabitat(id) {
+		if (typeof id !== 'number') throw new Error('ID must be a number');
+		return await this.get(`pokemon-habitat/${id}`);
+	}
 }
