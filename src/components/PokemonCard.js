@@ -61,7 +61,7 @@ export const PokemonCard = (parent, p, api, CARD_CLASSES) => {
 				loading: 'lazy',
 				className: 'w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden'
 			}),
-			h1({ className: 'text-center text-lg' }, capitalize(p.name)),
+			h1({ className: 'text-center text-lg' }, titleCase(p.name)),
 			detailsContainer
 		)
 	);
