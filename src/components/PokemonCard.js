@@ -1,6 +1,6 @@
 import { div, h1, img } from '../utils/ui/dom.js'
 import { render } from '../utils/ui/reactive.js'
-import {capitalize, titleCase} from '../utils/strings.js'
+import { capitalize, titleCase } from '../utils/strings.js'
 
 export const cardState = new Map(); // key: pokemon.id, value: { isHovering, timeoutId, pokemonData }
 

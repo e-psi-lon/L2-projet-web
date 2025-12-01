@@ -22,15 +22,19 @@ export default class PokeAPI {
 			});
 	}
 
+	async getWithLimitAndOffset(resource, limit = 100, offset = 0) {
+		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
+		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
+		const endpoint = offset === 0 ? `${resource}?limit=${limit}` : `${resource}?limit=${limit}&offset=${offset}`;
+		return (await this.get(endpoint)).results;
+	}
+
 	async getPokemonCount() {
 		return (await this.get('pokemon?limit=1')).count;
 	}
 
 	async getAllPokemon(limit = 20, offset = 0) {
-		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
-		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
-		const endpoint = offset === 0 ? `pokemon?limit=${limit}` : `pokemon?limit=${limit}&offset=${offset}`;
-		return (await this.get(endpoint)).results;
+		return await this.getWithLimitAndOffset('pokemon', limit, offset);
 	}
 
 	async getPokemon(id) {
@@ -49,10 +53,7 @@ export default class PokeAPI {
 	}
 
 	async getTypes(limit = 100, offset = 0) {
-		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
-		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
-		const endpoint = offset === 0 ? `type?limit=${limit}` : `type?limit=${limit}&offset=${offset}`;
-		return (await this.get(endpoint)).results;
+		return await this.getWithLimitAndOffset('type', limit, offset);
 	}
 
 	async getType(name) {
@@ -61,10 +62,7 @@ export default class PokeAPI {
 	}
 
 	async getGenerations(limit = 100, offset = 0) {
-		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
-		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
-		const endpoint = offset === 0 ? `generation?limit=${limit}` : `generation?limit=${limit}&offset=${offset}`;
-		return (await this.get(endpoint)).results;
+		return await this.getWithLimitAndOffset('generation', limit, offset);
 	}
 
 	getGenerationId(generation) {
@@ -78,10 +76,7 @@ export default class PokeAPI {
 	}
 
 	async getRegions(limit = 100, offset = 0) {
-		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
-		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
-		const endpoint = offset === 0 ? `region?limit=${limit}` : `region?limit=${limit}&offset=${offset}`;
-		return (await this.get(endpoint)).results;
+		return await this.getWithLimitAndOffset('region', limit, offset);
 	}
 
 	async getRegion(name) {
