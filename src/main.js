@@ -7,7 +7,6 @@ import { CARD_CLASSES, FILTER_SELECT_CLASSES } from "./constants.js";
 const app = document.querySelector('#app')
 const api = new PokeAPI();
 
-let search = '';
 
 const cardState = new Map(); // key: pokemon.id, value: { isHovering, timeoutId, pokemonData }
 
@@ -87,7 +86,7 @@ const capitalize = (str) => {
 	return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const PokemonCards = (parent, pokemon) => {
+const PokemonCards = (parent, pokemon, search) => {
 	const filtered = pokemon.filter(p =>
 		p.name.toLowerCase().includes(search.toLowerCase())
 	);
@@ -124,6 +123,7 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 
 
 (async () => {
+	let search = '';
 	const totalCount = await api.getPokemonCount();
 	let fullPokemonLists = await api.getAllPokemon(totalCount);
 	let pokemon = fullPokemonLists;
@@ -153,7 +153,7 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 						placeholder: 'Recherche...',
 						onInput: (e) => {
 							search = e.target.value;
-							PokemonCards(cardContainer, pokemon);
+							PokemonCards(cardContainer, pokemon, search);
 						},
 						className: 'w-full rounded-lg border-2 border-gray-300 p-2 flex items-center'
 					}),
@@ -169,11 +169,11 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 								if (type === '') {
 									pokemonOfCurrentType = fullPokemonLists;
 									pokemon = applyAllFilter(fullPokemonLists, pokemonOfCurrentType, pokemonOfCurrentGeneration, pokemonOfCurrentRegion);
-									PokemonCards(cardContainer, pokemon);
+									PokemonCards(cardContainer, pokemon, search);
 								} else {
 									pokemonOfCurrentType = (await api.getType(type)).pokemon.map(p => p.pokemon);
 									pokemon = applyAllFilter(fullPokemonLists, pokemonOfCurrentType, pokemonOfCurrentGeneration, pokemonOfCurrentRegion);
-									PokemonCards(cardContainer, pokemon);
+									PokemonCards(cardContainer, pokemon, search);
 								}
 						}
 						},
@@ -187,11 +187,11 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 							if (generation === '') {
 								pokemonOfCurrentGeneration = fullPokemonLists;
 								pokemon = applyAllFilter(fullPokemonLists, pokemonOfCurrentType, pokemonOfCurrentGeneration, pokemonOfCurrentRegion);
-								PokemonCards(cardContainer, pokemon);
+								PokemonCards(cardContainer, pokemon, search);
 							} else {
 								pokemonOfCurrentGeneration = (await api.getGeneration(parseInt(generation, 10))).pokemon_species;
 								pokemon = applyAllFilter(fullPokemonLists, pokemonOfCurrentType, pokemonOfCurrentGeneration, pokemonOfCurrentRegion);
-								PokemonCards(cardContainer, pokemon);
+								PokemonCards(cardContainer, pokemon, search);
 							}
 						}
 					},
@@ -204,7 +204,7 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 							const region = e.target.value;
 							if (region === '') {
 								pokemon = fullPokemonLists;
-								PokemonCards(cardContainer, pokemon);
+								PokemonCards(cardContainer, pokemon, search);
 							} else {
 								const { pokedexes } = await api.getRegion(region);
 
@@ -218,7 +218,7 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 									return true;
 								}).map(entry => entry.pokemon_species);
 								pokemon = applyAllFilter(fullPokemonLists, pokemonOfCurrentType, pokemonOfCurrentGeneration, pokemonOfCurrentRegion);
-								PokemonCards(cardContainer, pokemon);
+								PokemonCards(cardContainer, pokemon, search);
 							}
 						}
 					},
@@ -231,5 +231,5 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 		)
 	);
 
-	PokemonCards(cardContainer, pokemon);
+	PokemonCards(cardContainer, pokemon, search);
 })();
