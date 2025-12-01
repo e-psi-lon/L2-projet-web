@@ -1,8 +1,8 @@
 import { div, h1 } from '@ui/dom.js'
 import { render } from '@ui/reactive.js'
-import { PokemonCard } from './PokemonCard.js'
+import PokemonCard from './PokemonCard.js'
 
-export const PokemonCards = (parent, pokemon, search, api, CARD_CLASSES) => {
+const PokemonCards = (parent, pokemon, search, api, CARD_CLASSES) => {
 	const filtered = pokemon.filter(p =>
 		p.name.toLowerCase().includes(search.toLowerCase())
 	);
@@ -19,4 +19,6 @@ export const PokemonCards = (parent, pokemon, search, api, CARD_CLASSES) => {
 
 	return parent;
 };
+
+export default PokemonCards;
 
