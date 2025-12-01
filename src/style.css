@@ -24,3 +24,12 @@ body {
   }
 }
 
+dialog {
+  @apply border-none p-0 outline-none;
+}
+
+dialog::backdrop {
+  @apply bg-black/50;
+  backdrop-filter: blur(4px);
+}
+

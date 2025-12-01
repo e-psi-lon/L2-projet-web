@@ -11,7 +11,7 @@ export function el(tag, props = {}, ...children) {
 		else if (key.startsWith('on') && typeof value === 'function') {
 			const eventName = key.slice(2).toLowerCase()
 			element.addEventListener(eventName, value)
-		} else if (key === 'checked' || key === 'disabled' || key === 'selected')
+		} else if (key === 'checked' || key === 'disabled' || key === 'selected' || key === 'value')
 			element[key] = value
 		else if (value != null)
 			element.setAttribute(key, value.toString())
@@ -53,3 +53,4 @@ export const strong = (props = {}, ...children) => el('strong', props, ...childr
 export const em = (props = {}, ...children) => el('em', props, ...children)
 export const select = (props = {}, ...children) => el('select', props, ...children)
 export const option = (props = {}, ...children) => el('option', props, ...children)
+export const dialog = (props = {}, ...children) => el('dialog', props, ...children)
