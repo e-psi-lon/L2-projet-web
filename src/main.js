@@ -14,32 +14,28 @@ const cardState = new Map(); // key: pokemon.id, value: { isHovering, timeoutId,
 const PokemonCard = (parent, p) => {
 	const pokemonId = api.getPokemonId(p);
 
-	if (!cardState.has(pokemonId)) {
+	if (!cardState.has(pokemonId))
 		cardState.set(pokemonId, { isHovering: false, timeoutId: null, pokemonData: null });
-	}
 	const state = cardState.get(pokemonId);
 	const detailsContainer = div({ className: 'text-center text-sm text-gray-300' });
 
 	let cardDiv;
 	const updateDetails = () => {
-		if (state.isHovering) {
-			if (state.pokemonData) {
+		if (state.isHovering)
+			if (state.pokemonData)
 				render(detailsContainer,
 					div({},
 						div({}, `Type: ${state.pokemonData.types.map(t => capitalize(t.type.name)).join(', ')}`),
-						div({}, `Hauteur: ${state.pokemonData.height / 10}m`),
-						div({}, `Poids: ${state.pokemonData.weight / 10}kg`)
+						div({}, `Height: ${state.pokemonData.height / 10}m`),
+						div({}, `Weight: ${state.pokemonData.weight / 10}kg`)
 					)
 				);
-			} else {
-				render(detailsContainer, div({}, 'Chargement...'));
-			}
-		} else {
+			else
+				render(detailsContainer, div({}, 'Loading...'));
+		else
 			render(detailsContainer);
-		}
-		if (cardDiv) {
+		if (cardDiv)
 			cardDiv.className = state.isHovering ? `${CARD_CLASSES} scale-110`: CARD_CLASSES;
-		}
 	};
 
 	const handleMouseEnter = () => {
@@ -92,7 +88,7 @@ const PokemonCards = (parent, pokemon, search) => {
 	);
 
 	render(parent,
-		h1({}, `Nombre de Pokémon correspondants : ${filtered.length}`),
+		h1({}, `Corresponding Pokemon count : ${filtered.length}`),
 		div({ className: 'mt-4' }),
 		div({ className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' },
 			...filtered.map(p => {
@@ -150,7 +146,7 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 				},
 				div({ className: 'flex items-center gap-4 mb-2' },
 					input({
-						placeholder: 'Recherche...',
+						placeholder: 'Search...',
 						onInput: (e) => {
 							search = e.target.value;
 							PokemonCards(cardContainer, pokemon, search);
@@ -177,7 +173,7 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 								}
 						}
 						},
-						option({ value: '' }, 'Tous les types'),
+						option({ value: '' }, 'All types'),
 						...types.map(t => option({ value: t.name }, capitalize(t.name)))
 					),
 					select({
@@ -195,7 +191,7 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 							}
 						}
 					},
-						option({ value: '' }, 'Toutes les générations'),
+						option({ value: '' }, 'All generations'),
 						...generations.map(g => option({ value: g.id }, capitalize(g.realName)))
 					),
 					select({
@@ -222,7 +218,7 @@ const applyAllFilter = (fullPokemon, pokemonOfCurrentType, pokemonOfCurrentGener
 							}
 						}
 					},
-						option({ value: '' }, 'Toutes les régions'),
+						option({ value: '' }, 'All regions'),
 						...regions.map(r => option({ value: r.name }, capitalize(r.name)))
 					)
 				)
