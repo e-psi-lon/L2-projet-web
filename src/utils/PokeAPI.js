@@ -2,13 +2,16 @@
 export default class PokeAPI {
 	baseUrl;
 	cache;
+	apiCalls;
 	constructor() {
 		this.baseUrl = 'https://pokeapi.co/api/v2/';
 		this.cache = new Map();
+		this.apiCalls = 0;
 	}
 
 	async get(endpoint) {
 		if (this.cache.has(endpoint)) return this.cache.get(endpoint);
+		this.apiCalls++;
 		return await fetch(this.baseUrl + endpoint)
 			.then(async (response) => {
 				if (!response.ok) throw new Error(`HTTP error status: ${response.status}`);
@@ -22,11 +25,21 @@ export default class PokeAPI {
 			});
 	}
 
-	async getWithLimitAndOffset(resource, limit = 100, offset = 0) {
+	async #getWithLimitAndOffset(resource, limit = 100, offset = 0) {
 		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
 		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
 		const endpoint = offset === 0 ? `${resource}?limit=${limit}` : `${resource}?limit=${limit}&offset=${offset}`;
 		return (await this.get(endpoint)).results;
+	}
+
+	#extractId(obj, errorMessage = 'Invalid object - must have a url property') {
+		if (typeof obj !== 'object' || typeof obj.url !== 'string') throw new Error(errorMessage);
+		return parseInt(obj.url.split('/').filter(Boolean).pop(), 10);
+	}
+
+	#getSingle(resource, identifier) {
+		const endpoint = typeof identifier === 'number' ? `${resource}/${identifier}` : `${resource}/${identifier}`;
+		return this.get(endpoint);
 	}
 
 	async getPokemonCount() {
@@ -34,17 +47,16 @@ export default class PokeAPI {
 	}
 
 	async getAllPokemon(limit = 20, offset = 0) {
-		return await this.getWithLimitAndOffset('pokemon', limit, offset);
+		return await this.#getWithLimitAndOffset('pokemon', limit, offset);
 	}
 
 	async getPokemon(id) {
 		if (typeof id !== 'number') throw new Error('ID must be a number');
-		return await this.get(`pokemon/${id}`);
+		return await this.#getSingle('pokemon', id);
 	}
 
 	getPokemonId(pokemon) {
-		if (typeof pokemon !== 'object' && typeof pokemon.url !== 'string') throw new Error('Invalid Pokémon object');
-		return parseInt(pokemon.url.split('/').filter(Boolean).pop(), 10);
+		return this.#extractId(pokemon, 'Invalid Pokémon object');
 	}
 
 	getPokemonImageUrl(pokemon) {
@@ -53,45 +65,43 @@ export default class PokeAPI {
 	}
 
 	async getTypes(limit = 100, offset = 0) {
-		return await this.getWithLimitAndOffset('type', limit, offset);
+		return await this.#getWithLimitAndOffset('type', limit, offset);
 	}
 
 	async getType(name) {
 		if (typeof name !== 'string') throw new Error('Name must be a string');
-		return await this.get(`type/${name}`);
+		return await this.#getSingle('type', name);
 	}
 
 	async getGenerations(limit = 100, offset = 0) {
-		return await this.getWithLimitAndOffset('generation', limit, offset);
+		return await this.#getWithLimitAndOffset('generation', limit, offset);
 	}
 
 	getGenerationId(generation) {
-		if (typeof generation !== 'object' && typeof generation.url !== 'string') throw new Error('Invalid generation object');
-		return parseInt(generation.url.split('/').filter(Boolean).pop(), 10);
+		return this.#extractId(generation, 'Invalid generation object');
 	}
 
 	async getGeneration(number) {
 		if (typeof number !== 'number') throw new Error('Must provide a number');
-		return await this.get(`generation/${number}`);
+		return await this.#getSingle('generation', number);
 	}
 
 	async getRegions(limit = 100, offset = 0) {
-		return await this.getWithLimitAndOffset('region', limit, offset);
+		return await this.#getWithLimitAndOffset('region', limit, offset);
 	}
 
 	async getRegion(name) {
 		if (typeof name !== 'string') throw new Error('Name must be a string');
-		return await this.get(`region/${name}`);
+		return await this.#getSingle('region', name);
 	}
 
 	getPokedexId(pokedex) {
-		if (typeof pokedex !== 'object' && typeof pokedex.url !== 'string') throw new Error('Invalid pokedex object');
-		return parseInt(pokedex.url.split('/').filter(Boolean).pop(), 10);
+		return this.#extractId(pokedex, 'Invalid pokedex object');
 	}
 
 	async getPokedex(id) {
 		if (typeof id !== 'number') throw new Error('ID must be a number');
-		return await this.get(`pokedex/${id}`);
+		return await this.#getSingle('pokedex', id);
 	}
 
 	async getAbilityCount() {
@@ -99,53 +109,41 @@ export default class PokeAPI {
 	}
 
 	async getAbilities(limit = 100, offset = 0) {
-		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
-		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
-		const endpoint = offset === 0 ? `ability?limit=${limit}` : `ability?limit=${limit}&offset=${offset}`;
-		return (await this.get(endpoint)).results;
+		return await this.#getWithLimitAndOffset('ability', limit, offset);
 	}
 
 	getAbilityId(ability) {
-		if (typeof ability !== 'object' && typeof ability.url !== 'string') throw new Error('Invalid ability object');
-		return parseInt(ability.url.split('/').filter(Boolean).pop(), 10);
+		return this.#extractId(ability, 'Invalid ability object');
 	}
 
 	async getAbility(id) {
 		if (typeof id !== 'number') throw new Error('ID must be a number');
-		return await this.get(`ability/${id}`);
+		return await this.#getSingle('ability', id);
 	}
 
 	async getColors(limit = 100, offset = 0)  {
-		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
-		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
-		const endpoint = offset === 0 ? `pokemon-color?limit=${limit}` : `ability?limit=${limit}&offset=${offset}`;
-		return (await this.get(endpoint)).results;
+		return await this.#getWithLimitAndOffset('pokemon-color', limit, offset);
 	}
 
 	getColorId(color) {
-		if (typeof color !== 'object' && typeof color.url !== 'string') throw new Error('Invalid color object');
-		return parseInt(color.url.split('/').filter(Boolean).pop(), 10);
+		return this.#extractId(color, 'Invalid color object');
 	}
 
 	async getColor(id) {
 		if (typeof id !== 'number') throw new Error('ID must be a number');
-		return await this.get(`pokemon-color/${id}`);
+		return await this.#getSingle('pokemon-color', id);
 	}
 
 	async getHabitats(limit = 100, offset = 0)  {
-		if (typeof limit !== 'number' || limit <= 0) throw new Error('Limit must be a positive number');
-		if (typeof offset !== 'number' || offset < 0) throw new Error('Offset must be a non-negative number');
-		const endpoint = offset === 0 ? `pokemon-habitat?limit=${limit}` : `ability?limit=${limit}&offset=${offset}`;
-		return (await this.get(endpoint)).results;
+		return await this.#getWithLimitAndOffset('pokemon-habitat', limit, offset);
 	}
 
 	getHabitatId(habitat) {
-		if (typeof habitat !== 'object' && typeof habitat.url !== 'string') throw new Error('Invalid habitat object');
-		return parseInt(habitat.url.split('/').filter(Boolean).pop(), 10);
+		return this.#extractId(habitat, 'Invalid habitat object');
 	}
 
 	async getHabitat(id) {
 		if (typeof id !== 'number') throw new Error('ID must be a number');
-		return await this.get(`pokemon-habitat/${id}`);
+		return await this.#getSingle('pokemon-habitat', id);
 	}
 }

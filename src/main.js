@@ -27,13 +27,10 @@ const api = new PokeAPI();
 	const abilityCount = await api.getAbilityCount();
 	const abilities = await api.getAbilities(abilityCount);
 	for (const ability of abilities) ability.id = api.getAbilityId(ability);
-	console.log(abilities);
 	const colors = await api.getColors();
 	for (const color of colors) color.id = api.getColorId(color);
-	console.log(colors);
 	const habitats = await api.getHabitats();
 	for (const habitat of habitats) habitat.id = api.getHabitatId(habitat);
-	console.log(habitats);
 
 	let filterType = fullPokemonLists;
 	let filterGeneration = fullPokemonLists;
@@ -157,4 +154,5 @@ const api = new PokeAPI();
 	);
 
 	updatePokemon();
+	console.debug(`API calls made: ${api.apiCalls}`);
 })();
