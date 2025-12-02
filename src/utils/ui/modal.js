@@ -11,17 +11,18 @@ export const displayModal = ({content, parent = null, onClose = (_) => {}}) => {
 		dialogElement.close();
 		onClose(dialogElement);
 		dialogElement.remove();
+		document.body.style.overflow = '';
 	}
 	dialogElement = dialog({
 			id: 'modal-dialog',
-			className: 'max-w-[90vw] max-h-[90vh] m-auto rounded-lg overflow-scroll',
+			className: 'max-w-[90vw] max-h-[90vh] m-auto rounded-lg overflow-hidden',
 			onCancel: handleClose,
 			onClose: handleClose,
 			onClick: (e) => {
 				if (e.target === dialogElement) handleClose();
 			}
 		},
-		div({ className: 'p-4 flex flex-col gap-4' },
+		div({ className: 'p-4 flex flex-col gap-4 h-full' },
 			div({ className: 'flex justify-end' },
 				button({
 					className: 'bg-transparent border-0 p-0 m-0 outline-none cursor-pointer',

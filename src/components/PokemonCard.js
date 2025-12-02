@@ -1,10 +1,11 @@
 import { div, h1, img } from '@ui/dom.js'
 import { render } from '@ui/reactive.js'
 import { capitalize, titleCase } from '@utils/strings.js'
+import { CARD_CLASSES } from "@utils/constants.js";
 
 const cardState = new Map(); // key: pokemon.id, value: { isHovering, timeoutId, pokemonData }
 
-const PokemonCard = (parent, p, api, CARD_CLASSES) => {
+const PokemonCard = (parent, p, api) => {
 	const pokemonId = api.getPokemonId(p);
 
 	if (!cardState.has(pokemonId))

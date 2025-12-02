@@ -2,7 +2,7 @@ import './style.css'
 import PokeAPI from '@utils/PokeAPI.js'
 import { div, input, span, select, option } from '@ui/dom.js'
 import { render } from '@ui/reactive.js'
-import { CARD_CLASSES, FILTER_SELECT_CLASSES } from "@utils/constants.js";
+import { FILTER_SELECT_CLASSES } from "@utils/constants.js";
 import PokemonCards from '@components/PokemonCards.js'
 import { applyAllFilters } from '@utils/filters.js'
 import { capitalize } from "@utils/strings.js";
@@ -46,7 +46,7 @@ const api = new PokeAPI();
 
 	const updatePokemon = () => {
 		pokemon = applyAllFilters(fullPokemonLists, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
-		PokemonCards(cardContainer, pokemon, search, api, CARD_CLASSES);
+		PokemonCards(cardContainer, pokemon, search, api);
 	};
 
 	render(app,

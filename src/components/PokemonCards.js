@@ -2,7 +2,7 @@ import { div, h1 } from '@ui/dom.js'
 import { render } from '@ui/reactive.js'
 import PokemonCard from './PokemonCard.js'
 
-const PokemonCards = (parent, pokemon, search, api, CARD_CLASSES) => {
+const PokemonCards = (parent, pokemon, search, api) => {
 	const filtered = pokemon.filter(p =>
 		p.name.toLowerCase().includes(search.toLowerCase())
 	);
@@ -12,7 +12,7 @@ const PokemonCards = (parent, pokemon, search, api, CARD_CLASSES) => {
 		div({ className: 'mt-4' }),
 		div({ className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' },
 			...filtered.map(p => {
-				return PokemonCard(div({ id: `pokemon-${api.getPokemonId(p)}` }), p, api, CARD_CLASSES);
+				return PokemonCard(div({ id: `pokemon-${api.getPokemonId(p)}` }), p, api);
 			})
 		)
 	);
