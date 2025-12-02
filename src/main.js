@@ -11,12 +11,15 @@ const app = document.querySelector('#app')
 const api = new PokeAPI();
 
 
+const updatePokemon = (cardContainer, search, fullPokemonLists, api, ...filters) => {
+	const pokemon = applyAllFilters(fullPokemonLists, ...filters);
+	PokemonCards(cardContainer, pokemon, search, api);
+};
 
 (async () => {
 	let search = '';
 	const totalCount = await api.getPokemonCount();
 	const fullPokemonLists = await api.getAllPokemon(totalCount);
-	let pokemon = fullPokemonLists;
 	const types = await api.getTypes();
 	const generations = await api.getGenerations();
 	const regions = await api.getRegions();
@@ -44,22 +47,17 @@ const api = new PokeAPI();
 		className: 'flex flex-col gap-4'
 	});
 
-	const updatePokemon = () => {
-		pokemon = applyAllFilters(fullPokemonLists, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
-		PokemonCards(cardContainer, pokemon, search, api);
-	};
-
 	render(app,
 		div({ className: 'p-4' },
 			div({
 					className: 'flex-col'
 				},
-				div({ className: 'flex items-center gap-4 mb-2' },
+				div({ className: 'flex items-center gap-4' },
 					input({
 						placeholder: 'Search...',
 						onInput: (e) => {
 							search = e.target.value;
-							updatePokemon();
+							updatePokemon(cardContainer, search, fullPokemonLists, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat, api);
 						},
 						className: 'w-full rounded-lg border-2 border-gray-300 p-2 flex items-center'
 					}),
@@ -68,91 +66,91 @@ const api = new PokeAPI();
 				div({
 						id: 'filter-container',
 					},
-					select({
-						className: FILTER_SELECT_CLASSES,
-						onChange: async (e) => {
-								const type = e.target.value;
-								filterType = type === '' ? fullPokemonLists : (await api.getType(type)).pokemon.map(p => p.pokemon);
-								updatePokemon();
+				select({
+					className: FILTER_SELECT_CLASSES,
+					onChange: async (e) => {
+							const type = e.target.value;
+							filterType = type === '' ? fullPokemonLists : (await api.getType(type)).pokemon.map(p => p.pokemon);
+							updatePokemon(cardContainer, search, fullPokemonLists, api, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
+					}
+					},
+					option({ value: '' }, 'All types'),
+					...types.map(t => option({ value: t.name }, capitalize(t.name)))
+				),
+				select({
+					className: FILTER_SELECT_CLASSES,
+					onChange: async (e) => {
+						const generation = e.target.value;
+						filterGeneration = generation === '' ? fullPokemonLists : (await api.getGeneration(parseInt(generation, 10))).pokemon_species;
+						updatePokemon(cardContainer, search, fullPokemonLists, api, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
+					}
+				},
+					option({ value: '' }, 'All generations'),
+					...generations.map(g => option({ value: g.id }, capitalize(g.realName)))
+				),
+				select({
+					className: FILTER_SELECT_CLASSES,
+					onChange: async (e) => {
+						const region = e.target.value;
+						if (region === '') {
+							filterRegion = fullPokemonLists;
+						} else {
+							const { pokedexes } = await api.getRegion(region);
+							const pokedexDataList = await Promise.all(
+								pokedexes.map(pokedex => api.getPokedex(api.getPokedexId(pokedex)))
+							);
+							const seenNames = new Set();
+							filterRegion = pokedexDataList.flatMap(data => data.pokemon_entries).filter(entry => {
+								if (seenNames.has(entry.pokemon_species.name)) return false;
+								seenNames.add(entry.pokemon_species.name);
+								return true;
+							}).map(entry => entry.pokemon_species);
 						}
-						},
-						option({ value: '' }, 'All types'),
-						...types.map(t => option({ value: t.name }, capitalize(t.name)))
-					),
-					select({
+						updatePokemon(cardContainer, search, fullPokemonLists, api, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
+					}
+				},
+					option({ value: '' }, 'All regions'),
+					...regions.map(r => option({ value: r.name }, capitalize(r.name)))
+				),
+				select({
 						className: FILTER_SELECT_CLASSES,
 						onChange: async (e) => {
-							const generation = e.target.value;
-							filterGeneration = generation === '' ? fullPokemonLists : (await api.getGeneration(parseInt(generation, 10))).pokemon_species;
-							updatePokemon();
+							const ability = e.target.value;
+							filterAbility = ability === '' ? fullPokemonLists : (await api.getAbility(parseInt(ability))).pokemon.map(p => p.pokemon);
+							updatePokemon(cardContainer, search, fullPokemonLists, api, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
 						}
 					},
-						option({ value: '' }, 'All generations'),
-						...generations.map(g => option({ value: g.id }, capitalize(g.realName)))
-					),
-					select({
+					option({ value: '' }, 'All abilities'),
+					...abilities.map(a => option({ value: a.id }, capitalize(a.name)))
+				),
+				select({
 						className: FILTER_SELECT_CLASSES,
 						onChange: async (e) => {
-							const region = e.target.value;
-							if (region === '') {
-								filterRegion = fullPokemonLists;
-							} else {
-								const { pokedexes } = await api.getRegion(region);
-								const pokedexDataList = await Promise.all(
-									pokedexes.map(pokedex => api.getPokedex(api.getPokedexId(pokedex)))
-								);
-								const seenNames = new Set();
-								filterRegion = pokedexDataList.flatMap(data => data.pokemon_entries).filter(entry => {
-									if (seenNames.has(entry.pokemon_species.name)) return false;
-									seenNames.add(entry.pokemon_species.name);
-									return true;
-								}).map(entry => entry.pokemon_species);
-							}
-							updatePokemon();
+							const color = e.target.value;
+							filterColor = color === '' ? fullPokemonLists : (await api.getColor(parseInt(color))).pokemon_species;
+							updatePokemon(cardContainer, search, fullPokemonLists, api, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
 						}
 					},
-						option({ value: '' }, 'All regions'),
-						...regions.map(r => option({ value: r.name }, capitalize(r.name)))
-					),
-					select({
-							className: FILTER_SELECT_CLASSES,
-							onChange: async (e) => {
-								const ability = e.target.value;
-								filterAbility = ability === '' ? fullPokemonLists : (await api.getAbility(parseInt(ability))).pokemon.map(p => p.pokemon);
-								updatePokemon();
-							}
-						},
-						option({ value: '' }, 'All abilities'),
-						...abilities.map(a => option({ value: a.id }, capitalize(a.name)))
-					),
-					select({
-							className: FILTER_SELECT_CLASSES,
-							onChange: async (e) => {
-								const color = e.target.value;
-								filterColor = color === '' ? fullPokemonLists : (await api.getColor(parseInt(color))).pokemon_species;
-								updatePokemon();
-							}
-						},
-						option({ value: '' }, 'All colors'),
-						...colors.map(c => option({ value: c.id }, capitalize(c.name)))
-					),
-					select({
-							className: FILTER_SELECT_CLASSES,
-							onChange: async (e) => {
-								const habitat = e.target.value;
-								filterHabitat = habitat === '' ? fullPokemonLists : (await api.getHabitat(parseInt(habitat))).pokemon_species;
-								updatePokemon();
-							}
-						},
-						option({ value: '' }, 'All habitats'),
-						...habitats.map(h => option({ value: h.id }, capitalize(h.name)))
-					)
+					option({ value: '' }, 'All colors'),
+					...colors.map(c => option({ value: c.id }, capitalize(c.name)))
+				),
+				select({
+						className: FILTER_SELECT_CLASSES,
+						onChange: async (e) => {
+							const habitat = e.target.value;
+							filterHabitat = habitat === '' ? fullPokemonLists : (await api.getHabitat(parseInt(habitat))).pokemon_species;
+							updatePokemon(cardContainer, search, fullPokemonLists, api, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
+						}
+					},
+					option({ value: '' }, 'All habitats'),
+					...habitats.map(h => option({ value: h.id }, capitalize(h.name)))
+				)
 				)
 			),
 			cardContainer
 		)
 	);
 
-	updatePokemon();
+	updatePokemon(cardContainer, search, api, fullPokemonLists, filterType, filterGeneration, filterRegion, filterAbility, filterColor, filterHabitat);
 	console.debug(`API calls made: ${api.apiCalls}`);
 })();

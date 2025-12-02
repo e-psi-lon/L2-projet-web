@@ -7,6 +7,25 @@ import { CARD_CLASSES } from "@utils/constants.js";
 
 const cardState = new Map(); // key: pokemon.id, value: { isHovering, timeoutId, pokemonData }
 
+
+const updateDetails = (state, detailsContainer, cardDiv) => {
+	if (state.isHovering)
+		if (state.pokemonData)
+			render(detailsContainer,
+				div({},
+					div({}, `Type: ${state.pokemonData.types.map(t => capitalize(t.type.name)).join(', ')}`),
+					div({}, `Height: ${state.pokemonData.height / 10}m`),
+					div({}, `Weight: ${state.pokemonData.weight / 10}kg`)
+				)
+			);
+		else
+			render(detailsContainer, div({}, 'Loading...'));
+	else
+		render(detailsContainer);
+	if (cardDiv)
+		cardDiv.className = state.isHovering ? `${CARD_CLASSES} scale-110`: CARD_CLASSES;
+}
+
 const PokemonCard = (parent, p, api) => {
 	const pokemonId = api.getPokemonId(p);
 
@@ -16,32 +35,15 @@ const PokemonCard = (parent, p, api) => {
 	const detailsContainer = div({ className: 'text-center text-sm text-gray-300' });
 
 	let cardDiv;
-	const updateDetails = () => {
-		if (state.isHovering)
-			if (state.pokemonData)
-				render(detailsContainer,
-					div({},
-						div({}, `Type: ${state.pokemonData.types.map(t => capitalize(t.type.name)).join(', ')}`),
-						div({}, `Height: ${state.pokemonData.height / 10}m`),
-						div({}, `Weight: ${state.pokemonData.weight / 10}kg`)
-					)
-				);
-			else
-				render(detailsContainer, div({}, 'Loading...'));
-		else
-			render(detailsContainer);
-		if (cardDiv)
-			cardDiv.className = state.isHovering ? `${CARD_CLASSES} scale-110`: CARD_CLASSES;
-	};
 
 	const handleMouseEnter = () => {
 		state.isHovering = true;
-		updateDetails();
+		updateDetails(state, detailsContainer, cardDiv);
 
 		state.timeoutId = setTimeout(async () => {
 			if (state.isHovering) {
 				state.pokemonData = await api.getPokemon(pokemonId);
-				updateDetails();
+				updateDetails(state, detailsContainer, cardDiv);
 			}
 		}, 500);
 	};
@@ -49,7 +51,7 @@ const PokemonCard = (parent, p, api) => {
 	const handleMouseLeave = () => {
 		state.isHovering = false;
 		if (state.timeoutId) clearTimeout(state.timeoutId);
-		updateDetails();
+		updateDetails(state, detailsContainer, cardDiv);
 	};
 
 	cardDiv = div({

@@ -1,2 +1,2 @@
 export const CARD_CLASSES = 'border border-white/20 rounded-lg bg-white/5 cursor-pointer origin-center transition-transform duration-200'
-export const FILTER_SELECT_CLASSES = 'rounded-lg border-2 border-gray-300 p-2 mr-4'
+export const FILTER_SELECT_CLASSES = 'rounded-lg border-2 border-gray-300 p-2 mr-4 mt-2'
