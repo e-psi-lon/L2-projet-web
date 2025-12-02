@@ -1,6 +1,8 @@
 import { div, h1, img } from '@ui/dom.js'
 import { render } from '@ui/reactive.js'
 import { capitalize, titleCase } from '@utils/strings.js'
+import { displayModal } from "@ui/modal.js";
+import PokemonDetailedView from "./PokemonDetailedView.js";
 import { CARD_CLASSES } from "@utils/constants.js";
 
 const cardState = new Map(); // key: pokemon.id, value: { isHovering, timeoutId, pokemonData }
@@ -53,7 +55,13 @@ const PokemonCard = (parent, p, api) => {
 	cardDiv = div({
 			className: CARD_CLASSES,
 			onMouseEnter: handleMouseEnter,
-			onMouseLeave: handleMouseLeave
+			onMouseLeave: handleMouseLeave,
+			onClick: async () => {
+				const detailedViewContainer = div({ className: 'w-full h-full' });
+				displayModal({
+					content: await PokemonDetailedView(detailedViewContainer, pokemonId, api)
+				});
+			}
 		},
 		div({ className: 'flex flex-col items-center gap-2 p-4' },
 			img({

@@ -34,6 +34,7 @@ export const displayModal = ({content, parent = null, onClose = (_) => {}}) => {
 	)
 
 	actualParent.appendChild(dialogElement);
+	document.body.style.overflow = 'hidden';
 	dialogElement.showModal();
 	return dialogElement;
 }

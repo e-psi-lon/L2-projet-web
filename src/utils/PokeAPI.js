@@ -146,4 +146,18 @@ export default class PokeAPI {
 		if (typeof id !== 'number') throw new Error('ID must be a number');
 		return await this.#getSingle('pokemon-habitat', id);
 	}
+
+	async getPokemonSpecies(id) {
+		if (typeof id !== 'number') throw new Error('ID must be a number');
+		return await this.#getSingle('pokemon-species', id);
+	}
+
+	async getEvolutionChain(id) {
+		if (typeof id !== 'number') throw new Error('ID must be a number');
+		return await this.#getSingle('evolution-chain', id);
+	}
+
+	getEvolutionChainId(chain) {
+		return this.#extractId(chain, 'Invalid evolution chain object');
+	}
 }
