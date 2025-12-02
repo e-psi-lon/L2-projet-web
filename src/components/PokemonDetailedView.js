@@ -12,7 +12,7 @@ const getStatColor = (value) => {
 };
 
 const StatBar = (statName, value) => {
-	const percentage = (value / 180) * 100;
+	const percentage = (value / 255) * 100;
 	return div({ className: 'flex items-center gap-3 mb-2' },
 		span({ className: 'w-20 text-sm' }, strong({}, titleCase(statName.replace('-', ' ')))),
 		div({ className: 'flex-1 bg-gray-700 rounded h-5 overflow-hidden' },
@@ -25,15 +25,14 @@ const StatBar = (statName, value) => {
 	);
 };
 
-const EvolutionChain = async (pokemonData, api, onEvolutionClick) => {
+const EvolutionChain = async (pokemonData, species, api, onEvolutionClick) => {
 	try {
-		const species = await api.getPokemonSpecies(pokemonData.id);
-		const evolutionChainData = await api.getEvolutionChain(api.getEvolutionChainId(species));
+		const evolutionChainData = await api.getEvolutionChain(api.getEvolutionChainId(species.evolution_chain));
 
 		const extractEvolutions = (chain, evolutions = []) => {
 			evolutions.push({
 				name: chain.species.name,
-				id: parseInt(chain.species.url.split('/').filter(Boolean).pop(), 10)
+				id: api.getPokemonSpeciesId(chain.species)
 			});
 			if (chain.evolves_to.length > 0) {
 				chain.evolves_to.forEach(evolution => extractEvolutions(evolution, evolutions));
@@ -42,26 +41,82 @@ const EvolutionChain = async (pokemonData, api, onEvolutionClick) => {
 		};
 
 		const evolutions = extractEvolutions(evolutionChainData.chain);
+		const specialVarieties = species.varieties ? species.varieties.filter(v => !v.is_default) : [];
+
+		let showEvolutionChain = true;
+		const containerElement = div();
+
+		const renderToggle = () => {
+			const content = showEvolutionChain ?
+				div({ className: 'flex gap-2 flex-wrap' },
+					...evolutions.map(evo => {
+						const isCurrentPokemon = evo.id === pokemonData.id;
+						return div({
+							className: `flex flex-col items-center gap-1 p-2 rounded ${isCurrentPokemon ? 'bg-blue-900/50 border border-blue-500' : 'hover:bg-gray-800/50'} cursor-pointer transition-all`,
+							onClick: () => onEvolutionClick(evo.id),
+							title: titleCase(evo.name)
+						},
+							img({
+								src: api.getPokemonImageUrl(evo.id),
+								alt: titleCase(evo.name),
+								className: 'w-12 h-12'
+							}),
+							span({ className: 'text-xs text-center' }, titleCase(evo.name))
+						);
+					})
+				)
+			:
+				div({ className: 'flex gap-2 flex-wrap' },
+					...specialVarieties.map(variety => {
+						const varietyPokemonId = api.getPokemonId(variety.pokemon);
+						const varietyLabel = titleCase(variety.pokemon.name);
+
+						return div({
+							className: 'flex flex-col items-center gap-1 p-2 rounded hover:bg-gray-800/50 cursor-pointer transition-all',
+							onClick: () => onEvolutionClick(varietyPokemonId),
+							title: varietyLabel
+						},
+							img({
+								src: api.getPokemonImageUrl(varietyPokemonId),
+								alt: varietyLabel,
+								className: 'w-12 h-12'
+							}),
+							span({ className: 'text-xs text-center' }, varietyLabel)
+						);
+					})
+				);
+
+			const toggleButtonsArray = [
+				button({
+					className: `px-3 py-1 text-xs rounded transition-all ${showEvolutionChain ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`,
+					onClick: () => {
+						showEvolutionChain = true;
+						renderToggle();
+					}
+				}, 'Evolution Chain')
+			];
+
+			if (specialVarieties.length > 0) {
+				toggleButtonsArray.push(
+					button({
+						className: `px-3 py-1 text-xs rounded transition-all ${!showEvolutionChain ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`,
+						onClick: () => {
+							showEvolutionChain = false;
+							renderToggle();
+						}
+					}, 'Varieties')
+				);
+			}
+
+			const toggleButtons = div({ className: 'flex gap-2 mb-2' }, ...toggleButtonsArray);
+
+			render(containerElement, toggleButtons, content);
+		};
+
+		renderToggle();
 
 		return div({ className: 'mt-4' },
-			p({ className: 'text-xs text-gray-400 mb-2' }, 'Evolution Chain'),
-			div({ className: 'flex gap-2 flex-wrap' },
-				...evolutions.map(evo => {
-					const isCurrentPokemon = evo.id === pokemonData.id;
-					return div({
-						className: `flex flex-col items-center gap-1 p-2 rounded ${isCurrentPokemon ? 'bg-blue-900/50 border border-blue-500' : 'hover:bg-gray-800/50'} cursor-pointer transition-all`,
-						onClick: () => onEvolutionClick(evo.id),
-						title: titleCase(evo.name)
-					},
-						img({
-							src: api.getPokemonImageUrl(evo.id),
-							alt: titleCase(evo.name),
-							className: 'w-16 h-16'
-						}),
-						span({ className: 'text-xs text-center' }, titleCase(evo.name))
-					);
-				})
-			)
+			containerElement
 		);
 	} catch (error) {
 		console.error('Error loading evolution chain:', error);
@@ -91,7 +146,7 @@ const MovesSection = (moves) => {
 					}
 				},
 				disabled: currentPage === 0
-			}, icon(ChevronLeft, { className: 'w-4 h-4' })),
+			}, icon(ChevronLeft, { className: 'w-4 h-4 hover:bg-gray-700 rounded-full' })),
 			span({}, `Page ${currentPage + 1} of ${totalPages}`),
 			button({
 				className: 'p-1 hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed',
@@ -102,7 +157,7 @@ const MovesSection = (moves) => {
 					}
 				},
 				disabled: currentPage === totalPages - 1
-			}, icon(ChevronRight, { className: 'w-4 h-4' }))
+			}, icon(ChevronRight, { className: 'w-4 h-4 hover:bg-gray-700 rounded-full' }))
 		);
 		
 		const movesList = div({ className: 'space-y-1' },
@@ -123,6 +178,13 @@ const MovesSection = (moves) => {
 const PokemonDetailedView = async (parent, pokemonId, api) => {
 	const renderView = async (pId) => {
 		const pokemonData = await api.getPokemon(pId);
+		let species;
+		try {
+			species = await api.getPokemonSpecies(api.getPokemonSpeciesId(pokemonData.species));
+		} catch (error) {
+			render(parent, div({ className: 'text-red-500' }, 'Error loading Pokémon data.'));
+			return parent;
+		}
 
 		const statsSection = div({ className: 'mb-6' },
 			h3({ className: 'text-sm font-bold text-gray-300 mb-3' }, 'Base Stats'),
@@ -139,12 +201,28 @@ const PokemonDetailedView = async (parent, pokemonId, api) => {
 			)
 		);
 
+		const generationId = api.getGenerationId(species.generation);
+
 		const typeSection = div({ className: 'mb-6' },
 			h3({ className: 'text-sm font-bold text-gray-300 mb-3' }, 'Types'),
-			div({ className: 'flex gap-2 flex-wrap' },
-				...pokemonData.types.map(type =>
-					span({ className: 'bg-gray-700 px-2 py-1 rounded text-xs' }, capitalize(type.type.name))
-				)
+			div({ className: 'flex gap-4 flex-wrap' },
+				...await Promise.all(pokemonData.types.map(async (type) => {
+					const spriteUrl = await api.getTypeSprite(type.type.name, generationId);
+
+					if (spriteUrl) {
+						return div({ className: 'flex flex-col items-center gap-1' },
+							img({
+								src: spriteUrl,
+								alt: capitalize(type.type.name),
+								className: 'w-20 h-8 cursor-help',
+								title: capitalize(type.type.name)
+							}),
+							span({ className: 'text-xs' }, capitalize(type.type.name))
+						);
+					} else {
+						return span({ className: 'bg-gray-700 px-2 py-1 rounded text-xs' }, capitalize(type.type.name));
+					}
+				}))
 			)
 		);
 
@@ -169,7 +247,7 @@ const PokemonDetailedView = async (parent, pokemonId, api) => {
 			MovesSection(pokemonData.moves)
 		);
 
-		const evolutionChainContent = await EvolutionChain(pokemonData, api, (newPokemonId) => {
+		const evolutionChainContent = await EvolutionChain(pokemonData, species, api, (newPokemonId) => {
 			renderView(newPokemonId);
 		});
 
@@ -177,7 +255,7 @@ const PokemonDetailedView = async (parent, pokemonId, api) => {
 			img({
 				src: api.getPokemonImageUrl(pokemonData.id),
 				alt: titleCase(pokemonData.name),
-				className: 'w-64 h-64 rounded-lg'
+				className: 'w-48 h-48 rounded-lg'
 			}),
 			evolutionChainContent
 		);

@@ -20,7 +20,7 @@ export default class PokeAPI {
 				return data;
 			})
 			.catch(error => {
-				console.error('Fetch error:', error);
+				console.error('Fetch error at endpoint', endpoint, ': ', error);
 				throw error;
 			});
 	}
@@ -152,6 +152,10 @@ export default class PokeAPI {
 		return await this.#getSingle('pokemon-species', id);
 	}
 
+	getPokemonSpeciesId(species) {
+		return this.#extractId(species, 'Invalid species object');
+	}
+
 	async getEvolutionChain(id) {
 		if (typeof id !== 'number') throw new Error('ID must be a number');
 		return await this.#getSingle('evolution-chain', id);
@@ -159,5 +163,42 @@ export default class PokeAPI {
 
 	getEvolutionChainId(chain) {
 		return this.#extractId(chain, 'Invalid evolution chain object');
+	}
+
+	async getTypeSprite(typeName, generationId) {
+		if (typeof typeName !== 'string') throw new Error('Type name must be a string');
+		if (typeof generationId !== 'number') throw new Error('Generation ID must be a number');
+
+		const typeData = await this.getType(typeName);
+
+		if (!typeData.sprites) return null;
+
+		const generationKey = `generation-${this.#numberToRoman(generationId)}`;
+		const generationSprites = typeData.sprites[generationKey];
+
+		if (!generationSprites) {
+			// Fallback to first available generation
+			const availableGenerations = Object.keys(typeData.sprites).sort();
+			if (availableGenerations.length === 0) return null;
+
+			const fallbackGeneration = typeData.sprites[availableGenerations[0]];
+			const firstGame = Object.keys(fallbackGeneration)[0];
+			return fallbackGeneration[firstGame].name_icon;
+		}
+
+		const firstGame = Object.keys(generationSprites)[0];
+		return generationSprites[firstGame].name_icon;
+	}
+
+	#numberToRoman(num) {
+		const romanMap = {
+			1: 'i', 2: 'ii', 3: 'iii', 4: 'iv', 5: 'v',
+			6: 'vi', 7: 'vii', 8: 'viii', 9: 'ix'
+		};
+		return romanMap[num] || 'i';
+	}
+
+	getFormId(form) {
+		return this.#extractId(form, 'Invalid form object');
 	}
 }
