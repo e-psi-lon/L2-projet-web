@@ -3,7 +3,7 @@ import { render } from '@ui/reactive.js';
 import { titleCase, capitalize } from '@utils/strings.js';
 import { ChevronLeft, ChevronRight } from 'lucide';
 import { icon } from '@ui/icons.js';
-import StatBar from './StatBar.js';
+import StatBar from '../StatBar.js';
 
 const extractEvolutions = (chain, evolutions = []) => {
 	evolutions.push({
@@ -241,7 +241,7 @@ const renderDetailedView = async (parent, pokemonId, api, onEvolutionChange) => 
 	return parent;
 };
 
-const PokemonDetailedView = async (parent, pokemonId, api) => {
+const PokemonDetailedDialog = async (parent, pokemonId, api) => {
 	const onEvolutionChange = (newPokemonId) => {
 		renderDetailedView(parent, newPokemonId, api, onEvolutionChange);
 	};
@@ -249,4 +249,4 @@ const PokemonDetailedView = async (parent, pokemonId, api) => {
 	return await renderDetailedView(parent, pokemonId, api, onEvolutionChange);
 };
 
-export default PokemonDetailedView;
+export default PokemonDetailedDialog;

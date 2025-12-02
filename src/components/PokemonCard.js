@@ -2,7 +2,7 @@ import { div, h1, img } from '@ui/dom.js'
 import { render } from '@ui/reactive.js'
 import { capitalize, titleCase } from '@utils/strings.js'
 import { displayModal } from "@ui/modal.js";
-import PokemonDetailedView from "./PokemonDetailedView.js";
+import PokemonDetailedDialog from "./dialogs/PokemonDetailedDialog.js";
 import { CARD_CLASSES } from "@utils/constants.js";
 
 const cardState = new Map(); // key: pokemon.id, value: { isHovering, timeoutId, pokemonData }
