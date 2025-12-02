@@ -201,4 +201,44 @@ export default class PokeAPI {
 	getFormId(form) {
 		return this.#extractId(form, 'Invalid form object');
 	}
+
+	async getItemCount() {
+		return (await this.get('item?limit=1')).count;
+	}
+
+	async getItems(limit = 100, offset = 0) {
+		return await this.#getWithLimitAndOffset('item', limit, offset);
+	}
+
+	async getItem(id) {
+		return await this.#getSingle('item', id);
+	}
+
+	getItemId(item) {
+		return this.#extractId(item, 'Invalid item object');
+	}
+
+	async getItemCategories(limit = 100, offset = 0) {
+		return await this.#getWithLimitAndOffset('item-category', limit, offset);
+	}
+
+	async getItemCategory(id) {
+		return await this.#getSingle('item-category', id);
+	}
+
+	getItemCategoryId(category) {
+		return this.#extractId(category, 'Invalid item category object');
+	}
+
+	async getItemAttributes(limit = 100, offset = 0) {
+		return await this.#getWithLimitAndOffset('item-attribute', limit, offset);
+	}
+
+	async getItemAttribute(id) {
+		return await this.#getSingle('item-attribute', id);
+	}
+
+	getItemAttributeId(attribute) {
+		return this.#extractId(attribute, 'Invalid item attribute object');
+	}
 }
