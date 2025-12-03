@@ -28,6 +28,11 @@ export default class AppState {
 		return this.accounts;
 	}
 
+	addAccount(account) {
+		this.accounts.push(account);
+		this.notifyListeners();
+	}
+
 	subscribe(listener) {
 		this.listeners.push(listener);
 		return () => {
