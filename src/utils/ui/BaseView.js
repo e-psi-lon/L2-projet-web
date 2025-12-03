@@ -1,8 +1,7 @@
 export default class BaseView {
 	constructor(app) {
-		if (!app) {
+		if (!app)
 			throw new Error('BaseView requires an app container element');
-		}
 		this.app = app;
 	}
 
