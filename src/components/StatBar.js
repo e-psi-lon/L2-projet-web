@@ -18,16 +18,14 @@ const getStatColor = (value, maxValue = 255, colorThresholds = {}) => {
 	return 'bg-blue-500';
 };
 
-const StatBar = (parent, statName, value, options = {}) => {
-	const {
-		maxValue = 255,
-		showLabel = true,
-		showValue = true,
-		labelWidth = 'w-20',
-		barHeight = 'h-5',
-		gap = 'gap-3',
-		colorThresholds = {}
-	} = options;
+const StatBar = (parent, { statName, value, maxValue, showLabel, showValue, labelWidth, barHeight, gap, colorThresholds } = {}) => {
+	maxValue = maxValue ?? 255;
+	showLabel = showLabel ?? true;
+	showValue = showValue ?? true;
+	labelWidth = labelWidth ?? 'w-20';
+	barHeight = barHeight ?? 'h-5';
+	gap = gap ?? 'gap-3';
+	colorThresholds = colorThresholds ?? {};
 
 	const percentage = (value / maxValue) * 100;
 

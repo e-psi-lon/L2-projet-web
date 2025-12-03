@@ -26,8 +26,8 @@ const updateDetails = (state, detailsContainer, cardDiv) => {
 		cardDiv.className = state.isHovering ? `${CARD_CLASSES} scale-110` : CARD_CLASSES;
 }
 
-const PokemonCard = (parent, p, api) => {
-	const pokemonId = api.getPokemonId(p);
+const PokemonCard = (parent, { pokemon, api }) => {
+	const pokemonId = api.getPokemonId(pokemon);
 
 	if (!cardState.has(pokemonId))
 		cardState.set(pokemonId, { isHovering: false, timeoutId: null, pokemonData: null });
@@ -61,18 +61,18 @@ const PokemonCard = (parent, p, api) => {
 			onClick: async () => {
 				const detailedViewContainer = div({ className: 'w-full h-full' });
 				displayModal({
-					content: await PokemonDetailedDialog(detailedViewContainer, pokemonId, api)
+					content: await PokemonDetailedDialog(detailedViewContainer, { pokemonId, api })
 				});
 			}
 		},
 		div({ className: 'flex flex-col items-center gap-2 p-4' },
 			img({
-				src: api.getPokemonImageUrl(p),
-				alt: `Image of ${titleCase(p.name)} #${pokemonId}`,
+				src: api.getPokemonImageUrl(pokemon),
+				alt: `Image of ${titleCase(pokemon.name)} #${pokemonId}`,
 				loading: 'lazy',
 				className: 'w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden'
 			}),
-			h1({ className: 'text-center text-lg' }, titleCase(p.name)),
+			h1({ className: 'text-center text-lg' }, titleCase(pokemon.name)),
 			detailsContainer
 		)
 	);

@@ -5,7 +5,6 @@ import { div, input, option, select, span } from '@ui/dom.js';
 import { icon } from "@ui/icons.js";
 import { render } from '@ui/reactive.js';
 import { applyAllFilters } from '@utils/filters.js';
-import PokeAPI from '@utils/PokeAPI.js';
 import { capitalize } from '@utils/strings.js';
 import MainMenuView from '@views/MainMenuView.js';
 import { ArrowLeft } from "lucide";
@@ -37,7 +36,7 @@ export default class PokemonListView extends BaseView {
 			this.filters.color,
 			this.filters.habitat
 		);
-		PokemonCards(this.cardContainer, pokemon, this.search, this.api);
+		PokemonCards(this.cardContainer, { pokemon, search: this.search, api: this.api });
 	}
 
 	#filterSelect(name, getter, filterKey, options, optionValue = o => o.id, optionLabel = o => capitalize(o.realName || o.name)) {
@@ -107,18 +106,20 @@ export default class PokemonListView extends BaseView {
 				div({
 						className: 'flex-col'
 					},
-					ViewOpenerButton(
-						div({ className: 'mb-4' }),
-						div({ className: 'flex items-center justify-center gap-2' },
+				ViewOpenerButton(
+					div({ className: 'mb-4' }),
+					{
+						label: div({ className: 'flex items-center justify-center gap-2' },
 							icon(ArrowLeft, { className: 'w-4 h-4' }),
 							'Back to Menu'
 						),
-						MainMenuView,
-						this.app,
-						this.appState,
-						this.api,
-						'px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm transition-colors',
-					),
+						ViewClass: MainMenuView,
+						appContainer: this.app,
+						appState: this.appState,
+						api: this.api,
+						className: 'px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm transition-colors'
+					}
+				),
 					div({ className: 'flex items-center gap-4' },
 						input({
 							placeholder: 'Search...',
@@ -189,7 +190,6 @@ export default class PokemonListView extends BaseView {
 		);
 
 		this.#updatePokemon();
-		console.debug(`API calls made: ${this.api.apiCalls}`);
 	}
 
 	/**

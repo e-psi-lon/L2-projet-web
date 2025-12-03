@@ -3,7 +3,6 @@ import BaseView from "@ui/BaseView.js";
 import { div, h1, h2, option, select, span } from "@ui/dom.js";
 import { icon } from "@ui/icons.js";
 import { render } from "@ui/reactive.js";
-import PokeAPI from "@utils/PokeAPI.js";
 import PokemonListView from "@views/PokemonListView.js";
 import { Backpack, BookOpen, Sword } from 'lucide';
 
@@ -52,18 +51,20 @@ export default class MainMenuView extends BaseView {
 							icon(Backpack, { className: 'w-6 h-6' }),
 							span({}, 'Inventory')
 						),
-						ViewOpenerButton(
-							div(),
-							div({ className: 'flex items-center justify-center gap-3' },
+					ViewOpenerButton(
+						div(),
+						{
+							label: div({ className: 'flex items-center justify-center gap-3' },
 								icon(BookOpen, { className: 'w-6 h-6' }),
 								span({}, 'Pokédex')
 							),
-							PokemonListView,
-							this.app,
-							this.appState,
-							this.api,
-							`${buttonClassName} bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600`,
-						)
+							ViewClass: PokemonListView,
+							appContainer: this.app,
+							appState: this.appState,
+							api: this.api,
+							className: `${buttonClassName} bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600`
+						}
+					)
 					)
 				)
 			)

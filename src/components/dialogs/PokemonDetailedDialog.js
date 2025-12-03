@@ -143,7 +143,7 @@ const renderDetailedView = async (parent, pokemonId, api, onEvolutionChange) => 
 
 	const statsSection = div({ className: 'mb-6' },
 		h3({ className: 'text-sm font-bold text-gray-300 mb-3' }, 'Base Stats'),
-		...pokemonData.stats.map(stat => StatBar(div(), stat.stat.name, stat.base_stat))
+		...pokemonData.stats.map(stat => StatBar(div(), { statName: stat.stat.name, value: stat.base_stat }))
 	);
 
 	const abilitiesSection = div({ className: 'mb-6' },
@@ -245,7 +245,7 @@ const renderDetailedView = async (parent, pokemonId, api, onEvolutionChange) => 
 	return parent;
 };
 
-const PokemonDetailedDialog = async (parent, pokemonId, api) => {
+const PokemonDetailedDialog = async (parent, { pokemonId, api }) => {
 	const onEvolutionChange = (newPokemonId) => {
 		renderDetailedView(parent, newPokemonId, api, onEvolutionChange);
 	};
