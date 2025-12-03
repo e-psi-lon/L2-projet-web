@@ -1,5 +1,5 @@
 import { div, h1, img } from '@ui/dom.js'
-import { displayModal } from "@ui/modal.js";
+import { displayDialog } from "@ui/dialog.js";
 import { render } from '@ui/reactive.js'
 import { CARD_CLASSES } from "@utils/constants.js";
 import { capitalize, titleCase } from '@utils/strings.js'
@@ -58,12 +58,11 @@ const PokemonCard = (parent, { pokemon, api }) => {
 			className: CARD_CLASSES,
 			onMouseEnter: handleMouseEnter,
 			onMouseLeave: handleMouseLeave,
-			onClick: async () => {
-				const detailedViewContainer = div({ className: 'w-full h-full' });
-				displayModal({
-					content: await PokemonDetailedDialog(detailedViewContainer, { pokemonId, api })
-				});
-			}
+		onClick: async () => {
+			await displayDialog({
+				DialogComponentOrContent: PokemonDetailedDialog
+			}, pokemonId, api);
+		}
 		},
 		div({ className: 'flex flex-col items-center gap-2 p-4' },
 			img({

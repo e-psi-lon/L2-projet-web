@@ -245,7 +245,7 @@ const renderDetailedView = async (parent, pokemonId, api, onEvolutionChange) => 
 	return parent;
 };
 
-const PokemonDetailedDialog = async (parent, { pokemonId, api }) => {
+const PokemonDetailedDialog = async (parent, _, { pokemonId, api }) => {
 	const onEvolutionChange = (newPokemonId) => {
 		renderDetailedView(parent, newPokemonId, api, onEvolutionChange);
 	};
