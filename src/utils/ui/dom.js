@@ -42,6 +42,7 @@ export const button = (props = {}, ...children) => el('button', props, ...childr
 export const img = (props = {}, ...children) => el('img', props, ...children)
 export const label = (props = {}, ...children) => el('label', props, ...children)
 export const input = (props = {}, ...children) => el('input', props, ...children)
+export const textarea = (props = {}, ...children) => el('textarea', props, ...children)
 export const form = (props = {}, ...children) => el('form', props, ...children)
 export const ul = (props = {}, ...children) => el('ul', props, ...children)
 export const ol = (props = {}, ...children) => el('ol', props, ...children)

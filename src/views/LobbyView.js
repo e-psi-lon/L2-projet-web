@@ -1,7 +1,8 @@
 import BaseView from "@ui/BaseView.js";
+import ShowRtcInfoDialog from "@dialogs/ShowRtcInfoDialog.js";
 import { displayDialog } from "@ui/dialog.js";
 import { render } from "@ui/reactive.js"
-import { div, p } from "@ui/dom.js";
+import { button, div, p } from "@ui/dom.js";
 import WebRTCManager from "@utils/WebRTCManager.js";
 
 export default class LobbyView extends BaseView {
@@ -10,21 +11,35 @@ export default class LobbyView extends BaseView {
 		this.api = api
 		this.appState = appState;
 		this.rtc = null;
-		this.offer = offer;
+		this.offer = offer ? atob(decodeURIComponent(offer)) : null;
 	}
 
 	async #offerProvided() {
 		this.rtc = new WebRTCManager(false);
 		await this.rtc.init();
 		const answer = await this.rtc.acceptOffer(this.offer);
-		// Show a dialog with the answer ready to copy-paste OR as a QR code. Use the ShowAnswerDialog component for this.
 		await displayDialog({
+			DialogComponentOrContent: ShowRtcInfoDialog,
+		}, { infos: answer, rtc: this.rtc })
+	}
 
-		})
+	async #startRoom() {
+		this.rtc = new WebRTCManager(true);
+		console.log("Starting room...");
+		await this.rtc.init();
+		const offer = await this.rtc.createOffer();
+
+		await displayDialog({
+			DialogComponentOrContent: ShowRtcInfoDialog,
+		}, { infos: offer, rtc: this.rtc })
 	}
 
 	async render() {
-		render(this.app, div({ className: 'p-4' }, 'Lobby View'), p({}, `Loaded with offer: ${this.offer}`));
+		render(this.app,
+			div({ className: 'p-4' }, 'Lobby View'),
+			p({}, `Loaded with offer: ${this.offer}`),
+			button({ onClick: async () => await this.#startRoom() }, 'Start Room')
+		);
 
 		if (this.offer) await this.#offerProvided();
 	}

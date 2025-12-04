@@ -6,6 +6,7 @@ import { icon } from "@ui/icons.js";
 import { displayDialog } from "@ui/dialog.js";
 import { render } from "@ui/reactive.js";
 import PokemonListView from "@views/PokemonListView.js";
+import LobbyView from "@views/LobbyView.js";
 import { Backpack, BookOpen, Sword } from 'lucide';
 
 export default class MainMenuView extends BaseView {
@@ -18,7 +19,7 @@ export default class MainMenuView extends BaseView {
 	#accountSelector(parent) {
 		const isLoggedIn = this.appState.getCurrentAccount() !== null;
   		render(parent,
-		    span({ className: 'text-gray-300 text-sm font-medium' }, 'Account:'),
+		    span({ className: 'text-gray-300 text-sm font-medium hidden md:block' }, 'Account:'),
 			select({
 					className: 'px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white cursor-pointer hover:border-gray-500 transition-colors',
 					onChange: async (e) => {
@@ -59,12 +60,19 @@ export default class MainMenuView extends BaseView {
 				div({ className: 'flex-1 flex items-center justify-center p-4' },
 					div({ className: 'flex flex-col gap-6 max-w-md w-full' },
 						h2({ className: 'text-xl font-bold text-white text-center mb-4' }, 'Choose an Option'),
-						div({
-								className: `${buttonClassName} bg-gradient-to-r from-red-600 to-red-700 opacity-50 cursor-not-allowed flex items-center justify-center gap-3`,
-								title: 'Battles system not yet implemented'
-							},
-							icon(Sword, { className: 'w-6 h-6' }),
-							span({}, 'Battles')
+						ViewOpenerButton(
+							div(),
+							{
+								label: div({ className: 'flex items-center justify-center gap-3' },
+									icon(Sword, { className: 'w-6 h-6' }),
+									span({}, 'Battles')
+								),
+								ViewClass: LobbyView,
+								appContainer: this.app,
+								appState: this.appState,
+								api: this.api,
+								className: `${buttonClassName} bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600`
+							}
 						),
 						div({
 								className: `${buttonClassName} bg-gradient-to-r from-blue-600 to-blue-700 opacity-50 cursor-not-allowed flex items-center justify-center gap-3`,
