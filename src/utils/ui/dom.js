@@ -29,6 +29,7 @@ export function el(tag, props = {}, ...children) {
 
 export const div = (props = {}, ...children) => el('div', props, ...children)
 export const span = (props = {}, ...children) => el('span', props, ...children)
+export const br = (props = {}) => el('br', props)
 export const p = (props = {}, ...children) => el('p', props, ...children)
 export const h1 = (props = {}, ...children) => el('h1', props, ...children)
 export const h2 = (props = {}, ...children) => el('h2', props, ...children)
