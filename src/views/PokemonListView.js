@@ -90,9 +90,6 @@ export default class PokemonListView extends BaseView {
 		};
 	}
 
-	/**
-	 * Renders the entire view
-	 */
 	async render() {
 		await this.#initializeData();
 

@@ -1,5 +1,5 @@
-import NewAccountDialog from "@components/dialogs/NewAccountDialog.js";
 import ViewOpenerButton from "@components/ViewOpenerButton.js";
+import NewAccountDialog from "@dialogs/NewAccountDialog.js";
 import BaseView from "@ui/BaseView.js";
 import { div, h1, h2, option, select, span } from "@ui/dom.js";
 import { icon } from "@ui/icons.js";

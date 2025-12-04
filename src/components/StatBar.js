@@ -1,6 +1,6 @@
 import { div, span, strong } from '@ui/dom.js';
 import { render } from "@ui/reactive.js";
-import { titleCase } from '../utils/strings.js';
+import { titleCase } from '@utils/strings.js';
 
 const getStatColor = (value, maxValue = 255, colorThresholds = {}) => {
 	const {
