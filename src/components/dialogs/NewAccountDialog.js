@@ -25,10 +25,7 @@ const NewAccountDialog = (parent, handleClose) => {
 		div({ className: 'flex justify-end' },
 			button({
 				className: 'px-4 py-2 rounded-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 cursor-pointer',
-				onClick: () => {
-					parent.querySelector('input').value = ''; // Reset the input value
-					handleClose()
-				}
+				onClick: () => handleClose('cancel')
 			}, 'Cancel'),
 			button({
 				className: 'px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 cursor-pointer ml-2',

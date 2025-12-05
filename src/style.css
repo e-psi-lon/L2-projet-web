@@ -33,3 +33,14 @@ dialog::backdrop {
     backdrop-filter: blur(4px);
 }
 
+@keyframes dots {
+    0%, 20% { content: '' }
+    40% { content: '.' }
+    60% { content: '..' }
+    80%, 100% { content: '...' }
+}
+
+.animate-dots::after {
+    content: '';
+    animation: dots 1.5s infinite;
+}

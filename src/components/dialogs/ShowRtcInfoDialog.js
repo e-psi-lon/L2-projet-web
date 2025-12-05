@@ -1,24 +1,49 @@
 import { render } from "@ui/reactive.js";
-import { button, div, h2, img, p, textarea } from "@ui/dom.js";
+import { button, div, h2, img, p, span, textarea } from "@ui/dom.js";
 import { icon } from "@ui/icons.js";
 import { compressRTC } from "@utils/compression.js";
-import { Copy, X } from "lucide";
+import { Check, Copy, Loader2, X } from "lucide";
 import QRCode from "qrcode";
 import StatBar from "@components/StatBar.js";
 
-const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
+
+const renderLoading = (parent, handleClose, isAnswer) => {
+	const loadingText = isAnswer
+		? 'Accepting connection from other player'
+		: 'Creating room\'s connection offer';
+	const loadingTextSize = isAnswer ? 'min-w-[41ch]' : 'min-w-[35ch]'
+	render(parent,
+		div({ className: 'flex flex-col gap-4 items-center justify-center py-8' },
+			h2({ className: 'text-lg font-bold' }, 'WebRTC Connection'),
+			icon(Loader2, { className: 'animate-spin w-6 h-6'}),
+			div({ className: `flex justify-center items-center gap-3 ${loadingTextSize}` },
+				span({ className: 'animate-dots'}, loadingText)
+			),
+			button({
+				className: 'mt-4 bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 transition-colors flex items-center justify-center gap-2',
+				onClick: handleClose
+			}, icon(X, { className: 'w-4 h-4' }), 'Cancel')
+		)
+	);
+}
+
+const ShowRtcInfoDialog = async (parent, handleClose, { isAnswer, infoPromise }) => {
+	infoPromise = infoPromise ?? null;
 	const COUNTDOWN_SECONDS = 60;
+	let infos = null;
 	let remainingSeconds = COUNTDOWN_SECONDS;
 	let timerInterval = null;
 	const instructionText = isAnswer
 		? "Share this answer with the other player to establish the connection"
 		: "Share this offer with the other player and wait for their answer";
 
+	if (infoPromise) {
+		renderLoading(parent, handleClose, isAnswer);
+		infos = await infoPromise;
+	}
+
 	const data = compressRTC(infos);
-	console.log(data);
 	const qrCodeContent = `${window.location.origin}?offer=${encodeURIComponent(btoa(data))}`;
-	console.log(qrCodeContent);
-	console.log(`The content is ${qrCodeContent.length} characters long.`);
 	const timerBarContainer = div({ className: 'flex flex-col gap-1' });
 
 
@@ -26,7 +51,7 @@ const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
 		div({ className: 'flex flex-col gap-4' },
 			h2({ className: 'text-lg font-bold' }, 'WebRTC Connection'),
 			p({ className: 'text-sm text-gray-300' }, instructionText),
-			div({ className: 'flex justify-center bg-white p-4 rounded' },
+			!isAnswer ? div({ className: 'flex justify-center bg-white p-4 rounded' },
 				img({
 						className: 'w-64 h-64 object-contain',
 						src: await QRCode.toDataURL(qrCodeContent, {
@@ -37,7 +62,7 @@ const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
 						})
 					}
 				)
-			),
+			) : null,
 			div({ className: 'flex flex-col gap-2' },
 				p({ className: 'text-xs text-gray-400' }, 'Connection Info:'),
 				div(
@@ -58,6 +83,24 @@ const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
 					}, icon(Copy, { className: 'w-6 h-6' }))
 				)
 			),
+			!isAnswer ? div({ className: 'flex flex-col gap-2' },
+				p({ className: 'text-xs text-gray-400' }, 'Answer'),
+				div({ className: 'flex item-center gap-2' },
+					textarea({
+						type: 'text',
+						placeholder: 'Paste the answer given by the other player here then click on the button next to validate it...',
+						className: 'flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm text-white'
+					}),
+					button({
+						className: 'bg-blue-600 hover:bg-blue-700 text-white rounded p-2 transition-colors',
+						onClick: () => {
+							if (timerInterval) clearInterval(timerInterval);
+							handleClose();
+						},
+						title: 'Validate answer'
+					}, icon(Check, { className: 'w-6 h-6' }))
+				)
+			) : null,
 			timerBarContainer,
 			button({
 					className: 'w-full bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 transition-colors flex items-center justify-center gap-2',
@@ -101,7 +144,7 @@ const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
 
 		if (remainingSeconds <= 0) {
 			clearInterval(timerInterval);
-			handleClose();
+			handleClose('cancel')
 		}
 	}, 1000);
 

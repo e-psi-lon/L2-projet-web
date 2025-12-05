@@ -16,23 +16,38 @@ export default class LobbyView extends BaseView {
 	}
 
 	async #offerProvided() {
-		this.rtc = new WebRTCManager(false);
-		await this.rtc.init();
-		const answer = await this.rtc.acceptOffer(this.offer);
+		const answerPromise = (async () => {
+			this.rtc = new WebRTCManager(false);
+			await this.rtc.init();
+			return await this.rtc.createAnswer();
+		})();
 		await displayDialog({
 			DialogComponentOrContent: ShowRtcInfoDialog,
-		}, { infos: answer, rtc: this.rtc, isAnswer: true })
+			onClose: async (div, reason) => {
+				if (reason === 'cancel' || reason === 'backdrop' || reason === 'x-button') {
+					if (answerPromise.pending) answerPromise.cancel();
+					if (this.rtc) this.rtc.close();
+				}
+			}
+		}, { infoPromise: answerPromise, isAnswer: true })
 	}
 
 	async #startRoom() {
-		this.rtc = new WebRTCManager(true);
-		console.log("Starting room...");
-		await this.rtc.init();
-		const offer = await this.rtc.createOffer();
+		const offerPromise = (async () => {
+			this.rtc = new WebRTCManager(true);
+			await this.rtc.init();
+			return await this.rtc.createOffer();
+		})();
 
 		await displayDialog({
 			DialogComponentOrContent: ShowRtcInfoDialog,
-		}, { infos: offer, rtc: this.rtc, isAnswer: false })
+			onClose: async (div, reason) => {
+				if (reason === 'cancel' || reason === 'backdrop' || reason === 'x-button') {
+					if (offerPromise.pending) offerPromise.cancel();
+					if (this.rtc) this.rtc.close();
+				}
+			}
+		}, { infoPromise: offerPromise, isAnswer: false })
 	}
 
 	async render() {
