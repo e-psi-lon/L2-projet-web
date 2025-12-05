@@ -25,7 +25,8 @@ export default class MainMenuView extends BaseView {
 					onChange: async (e) => {
 						if (e.target.value === '__new__') await displayDialog({
 							DialogComponentOrContent: NewAccountDialog,
-							onClose: async (div) => {
+							onClose: async (div, reason) => {
+								if (reason === 'cancel') return;
 								const account = div.querySelector('input').value.trim();
 								if (account && account !== '') {
 									this.appState.addAccount(account);

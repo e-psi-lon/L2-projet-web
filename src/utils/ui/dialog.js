@@ -13,33 +13,33 @@ export const displayDialog = async ({ DialogComponentOrContent, parent, onClose,
 
 	const contentDiv = div({ className: 'h-full w-full' });
 
-	const cleanup = () => {
+	const cleanup = (reason = 'cancel') => {
 		if (isClosed) return;
 		isClosed = true;
 		dialogElement.remove();
 		document.body.style.overflow = '';
-		onClose(dialogElement);
+		onClose(dialogElement, reason);
 	};
 
-	const handleClose = () => {
-		cleanup();
+	const handleClose = (reason = 'close') => {
+		cleanup(reason);
 		dialogElement.close();
 	};
 
 	dialogElement = dialog({
 			id: 'modal-dialog',
 			className: 'max-w-[90vw] max-h-[90vh] m-auto rounded-lg overflow-hidden',
-			onCancel: cleanup,
-			onClose: cleanup,
+			onCancel: () => cleanup('cancel'),
+			onClose: () => cleanup('dismiss'),
 			onClick: (e) => {
-				if (e.target === dialogElement) handleClose();
+				if (e.target === dialogElement) handleClose('backdrop');
 			}
 		},
 		div({ className: 'p-4 flex flex-col gap-4 h-full' },
 			div({ className: 'flex justify-end' },
 				button({
 					className: 'bg-transparent border-0 p-0 m-0 outline-none cursor-pointer',
-					onClick: handleClose
+					onClick: () => handleClose('x-button')
 				}, icon(X, { className: 'w-5 h-5 hover:text-red-500 transition-colors duration-200' }))
 			),
 			contentDiv
