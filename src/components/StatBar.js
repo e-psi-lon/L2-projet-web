@@ -30,14 +30,14 @@ const StatBar = (parent, { statName, value, maxValue, showLabel, showValue, labe
 	const percentage = (value / maxValue) * 100;
 
 	render(parent, div({ className: `flex items-center ${gap} mb-2` },
-		showLabel && span({ className: `${labelWidth} text-sm` }, strong({}, titleCase(statName.replace('-', ' ')))),
+		showLabel ? span({ className: `${labelWidth} text-sm` }, strong({}, titleCase(statName.replace('-', ' ')))) : null,
 		div({ className: `flex-1 bg-gray-700 rounded ${barHeight} overflow-hidden` },
 			div({
-				className: `${getStatColor(value, maxValue, colorThresholds)} ${barHeight} transition-all`,
+				className: `${getStatColor(value, maxValue, colorThresholds)} ${barHeight} transition-all rounded`,
 				style: { width: `${percentage}%` }
 			})
 		),
-		showValue && span({ className: `w-8 text-right text-sm` }, value.toString())
+		showValue ? span({ className: `w-8 text-right text-sm` }, value.toString()) : null
 	));
 	return parent;
 };
