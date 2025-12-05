@@ -1,7 +1,7 @@
 import BaseView from "@ui/BaseView.js";
 import ShowRtcInfoDialog from "@dialogs/ShowRtcInfoDialog.js";
 import { displayDialog } from "@ui/dialog.js";
-import { render } from "@ui/reactive.js"
+import { render } from "@ui/rendering.js"
 import { button, div, p } from "@ui/dom.js";
 import { decompressRTC } from "@utils/compression.js";
 import WebRTCManager from "@utils/WebRTCManager.js";

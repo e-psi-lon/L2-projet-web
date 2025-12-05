@@ -4,7 +4,7 @@ import BaseView from "@ui/BaseView.js";
 import { div, h1, h2, option, select, span } from "@ui/dom.js";
 import { icon } from "@ui/icons.js";
 import { displayDialog } from "@ui/dialog.js";
-import { render } from "@ui/reactive.js";
+import { render } from "@ui/rendering.js";
 import PokemonListView from "@views/PokemonListView.js";
 import LobbyView from "@views/LobbyView.js";
 import { Backpack, BookOpen, Sword } from 'lucide';

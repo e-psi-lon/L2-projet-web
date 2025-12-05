@@ -1,6 +1,6 @@
 import { div, h1, img } from '@ui/dom.js'
 import { displayDialog } from "@ui/dialog.js";
-import { render } from '@ui/reactive.js'
+import { render } from '@ui/rendering.js'
 import { CARD_CLASSES } from "@utils/constants.js";
 import { capitalize, titleCase } from '@utils/strings.js'
 import PokemonDetailedDialog from "./dialogs/PokemonDetailedDialog.js";

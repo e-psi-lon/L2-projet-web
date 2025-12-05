@@ -1,7 +1,7 @@
 import StatBar from '@components/StatBar.js';
 import { button, div, h2, h3, img, p, span, strong } from '@ui/dom.js';
 import { icon } from '@ui/icons.js';
-import { render } from '@ui/reactive.js';
+import { render } from '@ui/rendering.js';
 import { capitalize, titleCase } from '@utils/strings.js';
 import { ChevronLeft, ChevronRight } from 'lucide';
 

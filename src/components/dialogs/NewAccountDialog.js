@@ -1,5 +1,5 @@
 import { button, div, h3, input, label, span } from "@ui/dom.js";
-import { render } from "@ui/reactive.js";
+import { render } from "@ui/rendering.js";
 
 const NewAccountDialog = (parent, handleClose) => {
 	render(parent,

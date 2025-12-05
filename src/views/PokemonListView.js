@@ -3,7 +3,7 @@ import ViewOpenerButton from '@components/ViewOpenerButton.js';
 import BaseView from '@ui/BaseView.js';
 import { div, input, option, select, span } from '@ui/dom.js';
 import { icon } from "@ui/icons.js";
-import { render } from '@ui/reactive.js';
+import { render } from '@ui/rendering.js';
 import { applyAllFilters } from '@utils/filters.js';
 import { capitalize } from '@utils/strings.js';
 import MainMenuView from '@views/MainMenuView.js';

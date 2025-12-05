@@ -1,4 +1,4 @@
-import { render } from "@ui/reactive.js";
+import { render } from "@ui/rendering.js";
 import { button, div, h2, img, p, span, textarea } from "@ui/dom.js";
 import { icon } from "@ui/icons.js";
 import { compressRTC } from "@utils/compression.js";

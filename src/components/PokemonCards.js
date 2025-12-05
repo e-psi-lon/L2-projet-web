@@ -1,5 +1,5 @@
 import { div, h1 } from '@ui/dom.js'
-import { render } from '@ui/reactive.js'
+import { render } from '@ui/rendering.js'
 import PokemonCard from './PokemonCard.js'
 
 const PokemonCards = (parent, { pokemon, search, api }) => {

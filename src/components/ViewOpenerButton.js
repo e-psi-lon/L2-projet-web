@@ -1,5 +1,5 @@
 import { button } from '@ui/dom.js';
-import { render } from '@ui/reactive.js';
+import { render } from '@ui/rendering.js';
 import BaseView from '@ui/BaseView.js';
 
 const ViewOpenerButton = (parent, { label, ViewClass, appContainer, appState, api, pushHistory, className }, ...args) => {

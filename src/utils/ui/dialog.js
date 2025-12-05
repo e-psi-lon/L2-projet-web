@@ -1,7 +1,7 @@
 import { X } from 'lucide'
 import { button, dialog, div, span } from "./dom.js";
 import { icon } from "./icons.js";
-import { render, resolveParent } from "./reactive.js";
+import { render, resolveParent } from "./rendering.js";
 
 export const displayDialog = async ({ DialogComponentOrContent, parent, onClose, }, args = null) => {
 	parent = parent ?? document.body;
