@@ -1,6 +1,7 @@
 import { render } from "@ui/reactive.js";
 import { button, div, h2, img, p, textarea } from "@ui/dom.js";
 import { icon } from "@ui/icons.js";
+import { compressRTC } from "@utils/compression.js";
 import { Copy, X } from "lucide";
 import QRCode from "qrcode";
 import StatBar from "@components/StatBar.js";
@@ -13,8 +14,11 @@ const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
 		? "Share this answer with the other player to establish the connection"
 		: "Share this offer with the other player and wait for their answer";
 
-	const qrCodeContent = `${window.location.origin}?offer=${encodeURIComponent(btoa(infos))}`;
-
+	const data = compressRTC(infos);
+	console.log(data);
+	const qrCodeContent = `${window.location.origin}?offer=${encodeURIComponent(btoa(data))}`;
+	console.log(qrCodeContent);
+	console.log(`The content is ${qrCodeContent.length} characters long.`);
 	const timerBarContainer = div({ className: 'flex flex-col gap-1' });
 
 
@@ -27,6 +31,8 @@ const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
 						className: 'w-64 h-64 object-contain',
 						src: await QRCode.toDataURL(qrCodeContent, {
 							errorCorrectionLevel: 'L',
+							type: 'image/png',
+							margin: 2,
 							width: 400,
 						})
 					}
@@ -38,7 +44,7 @@ const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
 					{ className: 'flex items-center gap-2' },
 					textarea({
 						type: 'text',
-						value: infos,
+						value: data,
 						readOnly: true,
 						onClick: (e) => e.target.select(),
 						className: 'flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm text-white truncate'
@@ -46,10 +52,10 @@ const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
 					button({
 						className: 'bg-blue-600 hover:bg-blue-700 text-white rounded p-2 transition-colors',
 						onClick: async () => {
-							await navigator.clipboard.writeText(infos);
+							await navigator.clipboard.writeText(data);
 						},
 						title: 'Copy to clipboard'
-					}, icon(Copy, { className: 'w-4 h-4' }))
+					}, icon(Copy, { className: 'w-6 h-6' }))
 				)
 			),
 			timerBarContainer,
@@ -77,7 +83,13 @@ const ShowRtcInfoDialog = async (parent, handleClose, { infos, isAnswer }) => {
 				maxValue: COUNTDOWN_SECONDS,
 				showLabel: false,
 				showValue: false,
-				barHeight: 'h-2'
+				barHeight: 'h-2',
+				colorThresholds: {
+					red: 0,
+					orange: 0,
+					yellow: 0,
+					green: 0
+				}
 			})
 		);
 	};

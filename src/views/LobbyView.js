@@ -3,6 +3,7 @@ import ShowRtcInfoDialog from "@dialogs/ShowRtcInfoDialog.js";
 import { displayDialog } from "@ui/dialog.js";
 import { render } from "@ui/reactive.js"
 import { button, div, p } from "@ui/dom.js";
+import { decompressRTC } from "@utils/compression.js";
 import WebRTCManager from "@utils/WebRTCManager.js";
 
 export default class LobbyView extends BaseView {
@@ -11,7 +12,7 @@ export default class LobbyView extends BaseView {
 		this.api = api
 		this.appState = appState;
 		this.rtc = null;
-		this.offer = offer ? atob(decodeURIComponent(offer)) : null;
+		this.offer = offer ? decompressRTC(atob(decodeURIComponent(offer))) : null;
 	}
 
 	async #offerProvided() {
@@ -20,7 +21,7 @@ export default class LobbyView extends BaseView {
 		const answer = await this.rtc.acceptOffer(this.offer);
 		await displayDialog({
 			DialogComponentOrContent: ShowRtcInfoDialog,
-		}, { infos: answer, rtc: this.rtc })
+		}, { infos: answer, rtc: this.rtc, isAnswer: true })
 	}
 
 	async #startRoom() {
@@ -31,7 +32,7 @@ export default class LobbyView extends BaseView {
 
 		await displayDialog({
 			DialogComponentOrContent: ShowRtcInfoDialog,
-		}, { infos: offer, rtc: this.rtc })
+		}, { infos: offer, rtc: this.rtc, isAnswer: false })
 	}
 
 	async render() {
@@ -46,6 +47,6 @@ export default class LobbyView extends BaseView {
 
 	destroy() {
 		this.app.innerHTML = '';
-		this.rtc.close();
+		if (this.rtc) this.rtc.close();
 	}
 }
