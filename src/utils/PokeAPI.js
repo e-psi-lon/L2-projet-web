@@ -241,4 +241,8 @@ export default class PokeAPI {
 	getItemAttributeId(attribute) {
 		return this.#extractId(attribute, 'Invalid item attribute object');
 	}
+
+	getMove(id) {
+		return this.#getSingle('move', id);
+	}
 }
