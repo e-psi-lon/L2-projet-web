@@ -15,6 +15,7 @@ export default class LobbyView extends BaseView {
 		this.api = api
 		this.appState = appState;
 		this.rtc = null;
+		this.stopRtc = true;
 		this.offer = offer ? decompressRTC(atob(decodeURIComponent(offer))) : null;
 	}
 
@@ -61,7 +62,6 @@ export default class LobbyView extends BaseView {
 			onClose: async (div, reason) => {
 				if (reason === 'success') {
 					await this.transitionToBattle();
-					await this.rtc.send({ type: 'ready' });
 				} else if (reason === 'cancel' || reason === 'backdrop' || reason === 'x-button') {
 					if (offerPromise.pending) offerPromise.cancel();
 					if (this.rtc) this.rtc.close();
@@ -72,6 +72,7 @@ export default class LobbyView extends BaseView {
 
 	async transitionToBattle() {
 		this.appState.setBattleRtc(this.rtc);
+		this.stopRtc = false;
 		await BaseView.switchView(BattleView, this.app, this.appState, this.api, true);
 	}
 
@@ -135,6 +136,6 @@ export default class LobbyView extends BaseView {
 
 	destroy() {
 		this.app.innerHTML = '';
-		if (this.rtc) this.rtc.close();
+		if (this.rtc && this.stopRtc) this.rtc.close();
 	}
 }

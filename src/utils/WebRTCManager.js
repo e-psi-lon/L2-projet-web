@@ -58,11 +58,16 @@ class WebRTCManager {
 	#setupChannel(channel) {
 		channel.onopen = () => {
 			this.connectionState = WebRTCManager.connectionState.CONNECTED;
+			console.log('Data channel opened');
 			if (this._onConnectionOpenCallback) this._onConnectionOpenCallback();
 		};
 		channel.onclose = () => {
 			this.connectionState = WebRTCManager.connectionState.DISCONNECTED;
+			console.log('Data channel closed');
 			if (this._onConnectionCloseCallback) this._onConnectionCloseCallback();
+		};
+		channel.onerror = (error) => {
+			console.error('Data channel error:', error);
 		};
 		channel.onmessage = (event) => {
 			if (this._onMessageCallback) this._onMessageCallback(JSON.parse(event.data));
