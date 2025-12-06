@@ -35,7 +35,7 @@ const renderMainContent = async (parent, handleClose, { isAnswer, data, qrCodeCo
 				? "Share this answer with the other player to establish the connection"
 				: "Share this offer with the other player and wait for their answer"
 			),
-			data ? div({ className: 'flex justify-center bg-white p-4 rounded' },
+		data ? div({ className: 'flex justify-center bg-white p-4 rounded' },
 				img({
 						className: 'w-64 h-64 object-contain',
 						src: qrCodeContent ? await QRCode.toDataURL(qrCodeContent, {
@@ -47,7 +47,7 @@ const renderMainContent = async (parent, handleClose, { isAnswer, data, qrCodeCo
 					}
 				)
 			) : null,
-			data ? div({ className: 'flex flex-col gap-2' },
+			!isAnswer && data ? div({ className: 'flex flex-col gap-2' },
 				p({ className: 'text-xs text-gray-400' }, 'Connection Info:'),
 				div(
 					{ className: 'flex items-center gap-2' },
@@ -224,11 +224,12 @@ const ShowRtcInfoDialog = async (parent, handleClose, { isAnswer, infoPromise, r
 		infos = await infoPromise;
 	}
 	const data = infos ? compressRTC(infos) : null;
-	const qrCodeContent = data ? `${window.location.origin}?offer=${encodeURIComponent(btoa(data))}` : null;
+	if (isAnswer && data) generatedAnswer = data;
+	const qrCodeContent = !isAnswer && data ? `${window.location.origin}?offer=${encodeURIComponent(btoa(data))}` : null;
 	const timerBarContainer = div({ className: 'flex flex-col gap-1' });
 	const answerInputContainer = div({});
 	const renderUI = async () => {
-		await renderMainContent(parent, handleClose, { isAnswer, data, qrCodeContent, answerInputContainer, timerBarContainer, handleOfferInput: onOfferInput, generatedAnswer });
+		await renderMainContent(parent, handleClose, { isAnswer, data: !isAnswer ? data : null, qrCodeContent, answerInputContainer, timerBarContainer, handleOfferInput: onOfferInput, generatedAnswer });
 		renderAnswerSection(answerInputContainer, { isAnswer, generatedAnswer, answerError, handleOfferInput: onOfferInput, handleAnswerInput: onAnswerInput });
 	};
 
