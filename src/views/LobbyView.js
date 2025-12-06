@@ -71,7 +71,8 @@ export default class LobbyView extends BaseView {
 	}
 
 	async transitionToBattle() {
-		await BaseView.switchView(BattleView, this.app, this.appState, this.api, true, this.rtc);
+		this.appState.setBattleRtc(this.rtc);
+		await BaseView.switchView(BattleView, this.app, this.appState, this.api, true);
 	}
 
 	async createRtc(isHost) {

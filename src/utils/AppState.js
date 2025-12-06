@@ -4,6 +4,7 @@ export default class AppState {
 		this.currentAccount = null;
 		this.accounts = ['Account 1', 'Account 2', 'Account 3'];
 		this.listeners = [];
+		this.battleRtc = null;
 	}
 
 	setCurrentView(view) {
@@ -31,6 +32,14 @@ export default class AppState {
 	addAccount(account) {
 		this.accounts.push(account);
 		this.notifyListeners();
+	}
+
+	getBattleRtc() {
+		return this.battleRtc;
+	}
+
+	setBattleRtc(rtc) {
+		this.battleRtc = rtc;
 	}
 
 	subscribe(listener) {
