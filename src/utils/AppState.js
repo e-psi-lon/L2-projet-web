@@ -2,9 +2,27 @@ export default class AppState {
 	constructor() {
 		this.currentView = null;
 		this.currentAccount = null;
-		this.accounts = ['Account 1', 'Account 2', 'Account 3'];
+		this.accounts = this.#loadAccounts();
 		this.listeners = [];
 		this.battleRtc = null;
+	}
+
+	#loadAccounts() {
+		try {
+			const data = localStorage.getItem('pokemon-pvp-accounts');
+			return data ? JSON.parse(data) : [];
+		} catch (error) {
+			console.error('Failed to load accounts:', error);
+			return [];
+		}
+	}
+
+	#saveAccounts() {
+		try {
+			localStorage.setItem('pokemon-pvp-accounts', JSON.stringify(this.accounts));
+		} catch (error) {
+			console.error('Failed to save accounts:', error);
+		}
 	}
 
 	setCurrentView(view) {
@@ -29,9 +47,12 @@ export default class AppState {
 		return this.accounts;
 	}
 
-	addAccount(account) {
+	addAccount(name) {
+		const account = { id: crypto.randomUUID(), name };
 		this.accounts.push(account);
+		this.#saveAccounts();
 		this.notifyListeners();
+		return account;
 	}
 
 	getBattleRtc() {
@@ -53,4 +74,3 @@ export default class AppState {
 		this.listeners.forEach(listener => listener(this));
 	}
 }
-

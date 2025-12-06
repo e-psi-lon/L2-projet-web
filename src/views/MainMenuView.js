@@ -27,10 +27,10 @@ export default class MainMenuView extends BaseView {
 							DialogComponentOrContent: NewAccountDialog,
 							onClose: async (div, reason) => {
 								if (reason === 'cancel') return;
-								const account = div.querySelector('input').value.trim();
-								if (account && account !== '') {
-									this.appState.addAccount(account);
-									this.appState.setCurrentAccount(account);
+								const accountName = div.querySelector('input').value.trim();
+								if (accountName && accountName !== '') {
+									const account = this.appState.addAccount(accountName);
+									this.appState.setCurrentAccount(account.id);
 									console.log(this.appState.getAccounts());
 								}
 								this.#accountSelector(parent);
@@ -42,7 +42,7 @@ export default class MainMenuView extends BaseView {
 				},
 				option({ value: '', disabled: true, selected: !isLoggedIn, hidden: true }, 'Select Account...'),
 				...this.appState.getAccounts().map(account =>
-					option({ value: account, selected: account === this.appState.getCurrentAccount() }, account)
+					option({ value: account.id, selected: account.id === this.appState.getCurrentAccount() }, account.name)
 				),
 				option({ value: '__new__' }, 'Create New Account')
 			)
