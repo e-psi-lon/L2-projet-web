@@ -76,7 +76,9 @@ class WebRTCManager {
 
 	async createOffer() {
 		return new Promise((resolve) => {
-			this._onIceCompleteCallback = () => {
+			let iceTimeout;
+			const onIceComplete = () => {
+				clearTimeout(iceTimeout);
 				const offerData = {
 					sdp: this.peerConnection.localDescription,
 					candidates: this.iceCandidates
@@ -84,20 +86,57 @@ class WebRTCManager {
 				resolve(JSON.stringify(offerData));
 			};
 
+			this._onIceCompleteCallback = onIceComplete;
+
+			// Set timeout: if no new candidates for 1 second, proceed anyway
+			const resetTimeout = () => {
+				clearTimeout(iceTimeout);
+				iceTimeout = setTimeout(onIceComplete, 1000);
+			};
+
+			this.peerConnection.onicecandidate = (event) => {
+				if (event.candidate) {
+					this.iceCandidates.push(event.candidate);
+					resetTimeout();
+				} else {
+					clearTimeout(iceTimeout);
+					this.#onIceComplete();
+				}
+			};
+
 			this.peerConnection.createOffer()
 				.then(offer => this.peerConnection.setLocalDescription(offer))
+				.then(() => resetTimeout())
 				.catch(err => console.error('Offer creation failed:', err));
 		});
 	}
 
 	async acceptOffer(offerJson) {
 		return new Promise((resolve) => {
-			this._onIceCompleteCallback = () => {
+			let iceTimeout;
+			const onIceComplete = () => {
+				clearTimeout(iceTimeout);
 				const answerData = {
 					sdp: this.peerConnection.localDescription,
 					candidates: this.iceCandidates
 				};
 				resolve(JSON.stringify(answerData));
+			};
+
+			this._onIceCompleteCallback = onIceComplete;
+			const resetTimeout = () => {
+				clearTimeout(iceTimeout);
+				iceTimeout = setTimeout(onIceComplete, 1000);
+			};
+
+			this.peerConnection.onicecandidate = (event) => {
+				if (event.candidate) {
+					this.iceCandidates.push(event.candidate);
+					resetTimeout();
+				} else {
+					clearTimeout(iceTimeout);
+					this.#onIceComplete();
+				}
 			};
 
 			try {
@@ -110,6 +149,7 @@ class WebRTCManager {
 					})
 					.then(() => this.peerConnection.createAnswer())
 					.then(answer => this.peerConnection.setLocalDescription(answer))
+					.then(() => resetTimeout())
 					.catch(err => console.error('Answer creation failed:', err));
 			} catch (err) {
 				console.error('Failed to parse offer:', err);
