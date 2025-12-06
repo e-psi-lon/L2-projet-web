@@ -42,6 +42,17 @@ class WebRTCManager {
 				this._onConnectionStateChangeCallback(this.peerConnection.connectionState);
 			}
 		};
+
+		this.peerConnection.oniceconnectionstatechange = () => {
+			console.debug('ICE connection state:', this.peerConnection.iceConnectionState);
+			if (this.peerConnection.iceConnectionState === 'failed') {
+				console.error('ICE connection failed - check TURN server configuration and network connectivity');
+			}
+		};
+
+		this.peerConnection.onicegatheringstatechange = () => {
+			console.debug('ICE gathering state:', this.peerConnection.iceGatheringState);
+		};
 	}
 
 	#setupChannel(channel) {

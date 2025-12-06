@@ -10,7 +10,7 @@ export default class BattleView extends BaseView {
     }
 
     async render() {
-        
+
     }
 
     destroy() {
