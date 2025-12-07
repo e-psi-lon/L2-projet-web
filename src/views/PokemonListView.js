@@ -10,9 +10,9 @@ import MainMenuView from '@views/MainMenuView.js';
 import { ArrowLeft } from "lucide";
 
 export default class PokemonListView extends BaseView {
-	constructor(app, appState, api) {
+	constructor(app, appState) {
 		super(app);
-		this.api = api
+		this.api = appState.getApi();
 		this.appState = appState;
 		this.search = '';
 		this.filters = {};
@@ -113,7 +113,6 @@ export default class PokemonListView extends BaseView {
 						ViewClass: MainMenuView,
 						appContainer: this.app,
 						appState: this.appState,
-						api: this.api,
 						className: 'px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm transition-colors'
 					}
 				),
@@ -189,11 +188,7 @@ export default class PokemonListView extends BaseView {
 		this.#updatePokemon();
 	}
 
-	/**
-	 * Cleanup when the view is destroyed
-	 */
 	destroy() {
-		// Any cleanup logic can go here
 		this.app.innerHTML = '';
 	}
 }

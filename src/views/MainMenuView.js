@@ -10,9 +10,9 @@ import LobbyView from "@views/LobbyView.js";
 import { Backpack, BookOpen, Sword } from 'lucide';
 
 export default class MainMenuView extends BaseView {
-	constructor(app, appState, api) {
+	constructor(app, appState) {
 		super(app);
-		this.api = api
+		this.api = appState.getApi();
 		this.appState = appState;
 	}
 
@@ -72,7 +72,6 @@ export default class MainMenuView extends BaseView {
 								appContainer: this.app,
 								appState: this.appState,
 								requiresLogin: true,
-								api: this.api,
 								className: `${buttonClassName} bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600`
 							}
 						),
@@ -93,7 +92,6 @@ export default class MainMenuView extends BaseView {
 							ViewClass: PokemonListView,
 							appContainer: this.app,
 							appState: this.appState,
-							api: this.api,
 							className: `${buttonClassName} bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600`
 						}
 					)

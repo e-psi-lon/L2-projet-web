@@ -8,10 +8,10 @@ import { render } from "@ui/rendering.js";
 import StatBar from "@components/StatBar.js";
 
 export default class BattleView extends BaseView {
-	constructor(app, appState, api) {
+	constructor(app, appState) {
 		super(app);
 		this.appState = appState;
-		this.api = api;
+		this.api = appState.getApi();
 		this.rtc = appState.getBattleRtc();
 		this.controller = null;
 		this.battleState = null;
@@ -56,7 +56,6 @@ export default class BattleView extends BaseView {
 				this.#updateBattle();
 			});
 			this.controller.onResolveUsername((username) => {
-				console.log('Resolved opponent username:', username);
 				this.#renderOpponentSection(
 					this.isHost ? this.battleState.player2.getActivePokemon() : this.battleState.player1.getActivePokemon(),
 					username

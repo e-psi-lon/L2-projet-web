@@ -10,9 +10,9 @@ import { decompressRTC } from "@utils/compression.js";
 import WebRTCManager from "@utils/WebRTCManager.js";
 
 export default class LobbyView extends BaseView {
-	constructor(app, appState, api, offer = null) {
+	constructor(app, appState, offer = null) {
 		super(app);
-		this.api = api
+		this.api = appState.getApi();
 		this.appState = appState;
 		this.rtc = null;
 		this.stopRtc = true;

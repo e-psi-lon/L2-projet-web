@@ -1,10 +1,19 @@
 export default class AppState {
 	constructor() {
 		this.currentView = null;
+		this.api = null;
 		this.currentAccount = null;
 		this.accounts = this.#loadAccounts();
 		this.listeners = [];
 		this.battleRtc = null;
+	}
+
+	setApi(api) {
+		this.api = api;
+	}
+
+	getApi() {
+		return this.api;
 	}
 
 	#loadAccounts() {

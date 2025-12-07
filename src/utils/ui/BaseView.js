@@ -1,11 +1,11 @@
 export default class BaseView {
 	static #currentViewInstance = null;
 
-	static async switchView(ViewClass, appContainer, appState, api, pushHistory = true, ...args) {
+	static async switchView(ViewClass, appContainer, appState, pushHistory = true, ...args) {
 		if (this.#currentViewInstance && typeof this.#currentViewInstance.destroy === 'function')
 			this.#currentViewInstance.destroy();
 
-		this.#currentViewInstance = new ViewClass(appContainer, appState, api, ...args);
+		this.#currentViewInstance = new ViewClass(appContainer, appState, ...args);
 		appState.setCurrentView(this.#currentViewInstance);
 
 		if (pushHistory)

@@ -4,7 +4,7 @@ import { button } from '@ui/dom.js';
 import { render } from '@ui/rendering.js';
 import BaseView from '@ui/BaseView.js';
 
-const ViewOpenerButton = (parent, { label, ViewClass, appContainer, appState, api, requiresLogin, pushHistory, className }, ...args) => {
+const ViewOpenerButton = (parent, { label, ViewClass, appContainer, appState, requiresLogin, pushHistory, className }, ...args) => {
 	pushHistory = pushHistory ?? true;
 	requiresLogin = requiresLogin ?? false;
 	className = className ?? '';
@@ -13,7 +13,7 @@ const ViewOpenerButton = (parent, { label, ViewClass, appContainer, appState, ap
 			await displayDialog({
 				DialogComponentOrContent: MustLoginDialog
 			})
-		else await BaseView.switchView(ViewClass, appContainer, appState, api, pushHistory, ...args);
+		else await BaseView.switchView(ViewClass, appContainer, appState, pushHistory, ...args);
 	};
 
 	render(parent, button({
