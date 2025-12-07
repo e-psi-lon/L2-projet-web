@@ -245,4 +245,8 @@ export default class PokeAPI {
 	getMove(id) {
 		return this.#getSingle('move', id);
 	}
+
+	getMoveId(move) {
+		return this.#extractId(move, 'Invalid move object');
+	}
 }

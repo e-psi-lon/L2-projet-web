@@ -1,8 +1,11 @@
 class Pokemon {
-	constructor(apiData, level = 100) {
+	constructor(apiData, level = null) {
 		this.id = apiData.id;
 		this.name = apiData.name;
-		this.level = level;
+		if (level === null || level === undefined) {
+			const baseExp = apiData.base_experience || 0;
+			this.level = Math.max(1, Math.min(100, Math.floor(Math.cbrt(baseExp) + 1)));
+		} else this.level = level;
 		this.types = (apiData.types || []).map(t => t.type.name);
 		this.stats = {};
 		(apiData.stats || []).forEach(stat => {
