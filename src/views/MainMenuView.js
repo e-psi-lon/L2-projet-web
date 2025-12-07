@@ -23,7 +23,7 @@ export default class MainMenuView extends BaseView {
 			select({
 					className: 'px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white cursor-pointer hover:border-gray-500 transition-colors',
 					onChange: async (e) => {
-						if (e.target.value === '__new__') await displayDialog({
+						if (e.target.value === '$new') await displayDialog({
 							DialogComponentOrContent: NewAccountDialog,
 							onClose: async (div, reason) => {
 								if (reason === 'cancel') return;
@@ -44,7 +44,7 @@ export default class MainMenuView extends BaseView {
 				...this.appState.getAccounts().map(account =>
 					option({ value: account.id, selected: account.id === this.appState.getCurrentAccount() }, account.name)
 				),
-				option({ value: '__new__' }, 'Create New Account')
+				option({ value: '$new' }, 'Create New Account')
 			)
 		)
 		return parent;
