@@ -71,6 +71,7 @@ export default class MainMenuView extends BaseView {
 								ViewClass: LobbyView,
 								appContainer: this.app,
 								appState: this.appState,
+								requiresLogin: true,
 								api: this.api,
 								className: `${buttonClassName} bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600`
 							}
