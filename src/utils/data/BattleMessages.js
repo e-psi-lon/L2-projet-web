@@ -1,6 +1,7 @@
 export const MessageType = {
 	READY: 'ready',
 	TEAM_SELECTED: 'team_selected',
+	ACCOUNT_NAME: 'account_name',
 	TURN_START: 'turn_start',
 	BATTLE_EVENT: 'battle_event',
 	TURN_END: 'turn_end',
@@ -48,6 +49,16 @@ export const createTeamSelectedMessage = (teamIds) => ({
 	teamIds,
 	timestamp: Date.now()
 });
+
+/**
+ * { type: 'account_name', accountName, timestamp }
+ */
+export const createAccountNameMessage = (accountName) => ({
+	type: MessageType.ACCOUNT_NAME,
+	accountName,
+	timestamp: Date.now()
+	}
+);
 
 /**
  * { type: 'turn_start', turnNumber, sequenceNumber, timestamp }

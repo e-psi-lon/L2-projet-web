@@ -16,7 +16,6 @@ import {
 	createStatusApplyEvent,
 	createStatChangeEvent
 } from '@data/BattleMessages.js';
-import PokeAPI from "@utils/PokeAPI.js";
 
 
 export class BattleController {
@@ -24,19 +23,27 @@ export class BattleController {
 		this.webrtc = webrtc;
 		this.isHost = isHost;
 		this.state = initialState;
-		this.api = api  || new PokeAPI();
+		this.api = api;
 
 		this.playerIndex = isHost ? 0 : 1;
+		this.opponentName = null;
 		this.listeners = [];
 		this.#setupWebRTCHandlers();
 	}
 
 	onStateChange(callback) {
-		this.listeners.push(callback);
+		this.listeners.push({ type: 'stateChange', callback });
 	}
 
-	#notifyListeners() {
-		this.listeners.forEach(listener => listener(this.state));
+	onResolveUsername(callback) {
+		this.listeners.push({ type: 'usernameResolved', callback });
+	}
+
+	#notifyListeners(type = 'stateChange') {
+		if (type === 'stateChange')
+			this.listeners.filter(l => l.type === 'stateChange').forEach(l => l.callback(this.state));
+		else if (type === 'usernameResolved')
+			this.listeners.filter(l => l.type === 'usernameResolved').forEach(l => l.callback(this.opponentName));
 	}
 
 	#setupWebRTCHandlers() {
@@ -456,6 +463,9 @@ export class BattleController {
 	async #handleMessage(message) {
 		try {
 			switch (message.type) {
+				case MessageType.ACCOUNT_NAME:
+					this.#handleAccountName(message);
+					break;
 				case MessageType.TURN_START:
 					this.#handleTurnStart(message);
 					break;
@@ -518,6 +528,11 @@ export class BattleController {
 	#handleBattleEvents(message) {
 		this.state = this.state.applyEvents(message.events);
 		this.#notifyListeners();
+	}
+
+	#handleAccountName(message) {
+		this.opponentName = message.accountName;
+		this.#notifyListeners('usernameResolved');
 	}
 
 	#handleTurnEnd() {

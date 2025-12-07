@@ -43,6 +43,14 @@ export default class AppState {
 		return this.currentAccount;
 	}
 
+	getCurrentAccountName() {
+		return this.getAccountName(this.currentAccount);
+	}
+
+	getAccountName(accountId) {
+		return this.accounts.find(a => a.id === accountId)?.name;
+	}
+
 	getAccounts() {
 		return this.accounts;
 	}

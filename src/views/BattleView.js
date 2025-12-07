@@ -2,6 +2,7 @@ import BaseView from "@ui/BaseView.js";
 import BattleController from "@utils/BattleController.js";
 import { BattleState } from "@utils/data/BattleState.js";
 import Pokemon from "@utils/data/Pokemon.js";
+import { createAccountNameMessage } from "@utils/data/BattleMessages.js";
 import { div, button, img } from "@ui/dom.js";
 import { render } from "@ui/rendering.js";
 import StatBar from "@components/StatBar.js";
@@ -49,6 +50,22 @@ export default class BattleView extends BaseView {
 
 			this.controller = new BattleController(this.rtc, this.isHost, initialState, this.api);
 
+			this.controller.onStateChange((state) => {
+				this.battleState = state;
+				console.log('Battle state changed:', JSON.stringify(state, null, 2));
+				this.#updateBattle();
+			});
+			this.controller.onResolveUsername((username) => {
+				console.log('Resolved opponent username:', username);
+				this.#renderOpponentSection(
+					this.isHost ? this.battleState.player2.getActivePokemon() : this.battleState.player1.getActivePokemon(),
+					username
+				);
+			});
+
+			const accountName = this.appState.getCurrentAccountName();
+			this.controller.webrtc.send(createAccountNameMessage(accountName));
+
 			render(this.app,
 				div({ className: 'min-h-screen flex flex-col' },
 					div({ className: 'flex-1 flex flex-col items-center justify-start pt-8' },
@@ -62,12 +79,6 @@ export default class BattleView extends BaseView {
 			);
 
 			this.#updateBattle();
-
-			this.controller.onStateChange((state) => {
-				this.battleState = state;
-				console.log('Battle state changed:', JSON.stringify(state, null, 2));
-				this.#updateBattle();
-			});
 		} catch (error) {
 			console.error('Error rendering BattleView:', error);
 			render(this.app, div({}, `Error: ${error.message}`));
@@ -80,13 +91,15 @@ export default class BattleView extends BaseView {
 		const opponentPokemon = this.isHost ? state.player2.getActivePokemon() : state.player1.getActivePokemon();
 		const hasActed = this.isHost ? state.player1.hasActed : state.player2.hasActed;
 
-		if (this.previousOpponentPokemon !== opponentPokemon) {
-			this.#renderOpponentSection(opponentPokemon);
+		if (this.previousOpponentPokemon !== opponentPokemon || this.previousOpponentName !== this.controller.opponentName) {
+			this.#renderOpponentSection(opponentPokemon, this.controller.opponentName);
 			this.previousOpponentPokemon = opponentPokemon;
+			this.previousOpponentName = this.controller.opponentName;
 		}
 
 		if (this.previousYourPokemon !== yourPokemon) {
-			this.#renderPlayerSection(yourPokemon);
+			const accountName = this.appState.getCurrentAccountName();
+			this.#renderPlayerSection(yourPokemon, accountName);
 			this.previousYourPokemon = yourPokemon;
 		}
 		if (this.previousPhase !== state.phase || this.previousHasActed !== hasActed) {
@@ -96,8 +109,10 @@ export default class BattleView extends BaseView {
 		}
 	}
 
-	#renderOpponentSection(pokemon) {
+	#renderOpponentSection(pokemon, opponentName) {
+		const displayName = opponentName || 'Opponent';
 		render('opponent-container',
+			div({ className: 'text-white text-sm font-semibold text-gray-400' }, displayName),
 			div({ className: 'text-white text-lg font-semibold' }, pokemon.name),
 			StatBar(div({ className: 'w-full' }), {
 				statName: 'HP',
@@ -112,8 +127,9 @@ export default class BattleView extends BaseView {
 		);
 	}
 
-	#renderPlayerSection(pokemon) {
+	#renderPlayerSection(pokemon, accountName) {
 		render('player-container',
+			div({ className: 'text-white text-sm font-semibold text-gray-400' }, accountName || 'You'),
 			img({ src: this.api.getPokemonImageUrl(pokemon.id), alt: pokemon.name, className: 'w-32 h-32' }),
 			StatBar(div({ className: 'w-full' }), {
 				statName: 'HP',
