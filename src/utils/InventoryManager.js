@@ -4,21 +4,57 @@ class InventoryManager {
 	#pokemon = [];
 	#items = new Map(); // Map<itemId, { item: Item, quantity: number }>
 	#api = null;
+	#userId = null;
+	#storageKey = null;
+	#selectedTeam = [];
 
-	constructor(api = null) {
+	constructor(userId, api = null) {
+		this.#userId = userId;
 		this.#api = api;
+		this.#storageKey = `inventory-${userId}`;
+		this.#loadFromStorage();
 	}
 
+	#loadFromStorage() {
+		if (!this.#storageKey) return;
+		try {
+			const data = localStorage.getItem(this.#storageKey);
+			if (!data) return;
+			const { pokemon, items, selectedTeam } = JSON.parse(data);
+			this.#pokemon = pokemon || [];
+			this.#items = new Map(items || []);
+			this.#selectedTeam = selectedTeam || [];
+		} catch (error) {
+			console.error('Failed to load inventory from storage:', error);
+		}
+	}
+
+	#saveToStorage() {
+		if (!this.#storageKey) return;
+		try {
+			const data = {
+				pokemon: this.#pokemon,
+				items: Array.from(this.#items.entries()),
+				selectedTeam: this.#selectedTeam
+			};
+			localStorage.setItem(this.#storageKey, JSON.stringify(data));
+		} catch (error) {
+			console.error('Failed to save inventory to storage:', error);
+		}
+	}
 
 	addPokemon(pokemon) {
-		if (this.#pokemon.length < 6) this.#pokemon.push(pokemon);
-		else throw new Error('Inventory is full');
+		if (this.#pokemon.length < 6) {
+			this.#pokemon.push(pokemon);
+			this.#saveToStorage();
+		} else throw new Error('Inventory is full');
 	}
 
 	removePokemon(index) {
 		if (index < 0 || index >= this.#pokemon.length)
 			throw new Error('Invalid Pokemon index');
 		this.#pokemon.splice(index, 1);
+		this.#saveToStorage();
 	}
 
 	getPokemon() {
@@ -40,6 +76,7 @@ class InventoryManager {
 		const entry = this.#items.get(item.id);
 		if (entry) entry.quantity += quantity;
 		else this.#items.set(item.id, { item, quantity });
+		this.#saveToStorage();
 	}
 
 	removeItem(itemId, quantity = 1) {
@@ -53,6 +90,7 @@ class InventoryManager {
 			this.#items.delete(itemId);
 		else
 			entry.quantity -= quantity;
+		this.#saveToStorage();
 	}
 
 	getItemQuantity(itemId) {
@@ -67,8 +105,12 @@ class InventoryManager {
 
 	getItems() {
 		const items = [];
-		for (const { item, quantity } of this.#items.values())
-			items.push({ ...item.toJSON(), quantity });
+		for (const { item, quantity } of this.#items.values()) {
+			items.push({
+				...item,
+				quantity
+			});
+		}
 		return items;
 	}
 
@@ -78,6 +120,15 @@ class InventoryManager {
 
 	hasItem(itemId, quantity = 1) {
 		return this.getItemQuantity(itemId) >= quantity;
+	}
+
+	getSelectedTeam() {
+		return [...this.#selectedTeam];
+	}
+
+	setSelectedTeam(team) {
+		this.#selectedTeam = Array.isArray(team) ? [...team] : [];
+		this.#saveToStorage();
 	}
 
 	async loadItemFromAPI(itemId) {

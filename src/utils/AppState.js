@@ -1,3 +1,5 @@
+import InventoryManager from '@utils/InventoryManager.js';
+
 export default class AppState {
 	constructor() {
 		this.currentView = null;
@@ -6,6 +8,7 @@ export default class AppState {
 		this.accounts = this.#loadAccounts();
 		this.listeners = [];
 		this.battleRtc = null;
+		this.inventories = new Map(); // accountId -> InventoryManager
 	}
 
 	setApi(api) {
@@ -78,6 +81,25 @@ export default class AppState {
 
 	setBattleRtc(rtc) {
 		this.battleRtc = rtc;
+	}
+
+	getSelectedTeam() {
+		const inventory = this.getInventory();
+		return inventory ? inventory.getSelectedTeam() : [];
+	}
+
+	setSelectedTeam(team) {
+		const inventory = this.getInventory();
+		if (inventory) {
+			inventory.setSelectedTeam(team);
+		}
+	}
+
+	getInventory() {
+		if (!this.inventories.has(this.currentAccount)) {
+			this.inventories.set(this.currentAccount, new InventoryManager(this.currentAccount));
+		}
+		return this.inventories.get(this.currentAccount);
 	}
 
 	subscribe(listener) {
