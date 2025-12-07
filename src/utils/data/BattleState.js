@@ -33,22 +33,24 @@ export class BattleInstancePokemon {
 		this.movePool = pokemon.movePool || [];
 	}
 
-	clone() {
-		const cloned = new BattleInstancePokemon(
-			{
-				id: this.id,
-				name: this.name,
-				level: this.level,
-				types: [...this.types],
-				getStat: (stat) => this.baseStats[stat] || 0
-			},
-			this.index
-		);
-		cloned.currentHp = this.currentHp;
-		cloned.status = this.status;
-		cloned.isFainted = this.isFainted;
-		cloned.statStages = { ...this.statStages };
-		cloned.movePool = [...this.movePool];
+	clone(overrides = {}) {
+		const fakePokemon = {
+			id: overrides.id !== undefined ? overrides.id : this.id,
+			name: overrides.name !== undefined ? overrides.name : this.name,
+			level: overrides.level !== undefined ? overrides.level : this.level,
+			types: overrides.types ? [...overrides.types] : [...this.types],
+			movePool: overrides.movePool ? [...overrides.movePool] : [...this.movePool],
+			getStat: (stat) => {
+				const stats = overrides.baseStats ? overrides.baseStats : this.baseStats;
+				return stats[stat] || 0;
+			}
+		};
+		const cloned = new BattleInstancePokemon(fakePokemon, overrides.index !== undefined ? overrides.index : this.index);
+		cloned.currentHp = overrides.currentHp !== undefined ? overrides.currentHp : this.currentHp;
+		cloned.maxHp = overrides.maxHp !== undefined ? overrides.maxHp : this.maxHp;
+		cloned.status = overrides.status !== undefined ? overrides.status : this.status;
+		cloned.isFainted = overrides.isFainted !== undefined ? overrides.isFainted : this.isFainted;
+		cloned.statStages = overrides.statStages ? { ...overrides.statStages } : { ...this.statStages };
 		return cloned;
 	}
 
@@ -81,13 +83,17 @@ export class BattlePlayer {
 		return this.team[this.activePokemonIndex];
 	}
 
-	clone() {
+	clone(overrides = {}) {
 		const cloned = new BattlePlayer(this.accountId, [], this.playerIndex);
-		cloned.team = this.team.map(p => p.clone());
-		cloned.activePokemonIndex = this.activePokemonIndex;
-		cloned.selectedMove = this.selectedMove ? { ...this.selectedMove } : null;
-		cloned.selectedSwitch = this.selectedSwitch;
-		cloned.hasActed = this.hasActed;
+		if (overrides.team) cloned.team = overrides.team.map(p => p.clone());
+		else if (overrides.teamOverrides) cloned.team = this.team.map((p, idx) => p.clone(overrides.teamOverrides[idx] || {}));
+		else cloned.team = this.team.map(p => p.clone());
+
+
+		cloned.activePokemonIndex = overrides.activePokemonIndex !== undefined ? overrides.activePokemonIndex : this.activePokemonIndex;
+		cloned.selectedMove = overrides.selectedMove !== undefined ? overrides.selectedMove : (this.selectedMove ? { ...this.selectedMove } : null);
+		cloned.selectedSwitch = overrides.selectedSwitch !== undefined ? overrides.selectedSwitch : this.selectedSwitch;
+		cloned.hasActed = overrides.hasActed !== undefined ? overrides.hasActed : this.hasActed;
 		return cloned;
 	}
 
@@ -155,22 +161,26 @@ export class BattleState {
 	}
 
 	resolveTurn() {
-		const newState = this.clone();
-		newState.sequenceNumber++;
+		const newState = this.clone({ sequenceNumber: this.sequenceNumber + 1 });
 		newState.phase = 'resolution';
 		return newState;
 	}
 
 	beginTurn() {
-		const newState = this.clone();
+		const newState = this.clone({
+			player1: {
+				selectedMove: null,
+				selectedSwitch: null,
+				hasActed: false
+			},
+			player2: {
+				selectedMove: null,
+				selectedSwitch: null,
+				hasActed: false
+			}
+		});
 		newState.turnNumber++;
 		newState.phase = 'selection';
-		newState.player1.selectedMove = null;
-		newState.player1.selectedSwitch = null;
-		newState.player1.hasActed = false;
-		newState.player2.selectedMove = null;
-		newState.player2.selectedSwitch = null;
-		newState.player2.hasActed = false;
 		return newState;
 	}
 
@@ -189,27 +199,28 @@ export class BattleState {
 	}
 
 	endBattle() {
-		const newState = this.clone();
-		newState.phase = 'ended';
-		return newState;
+		return this.clone({ phase: 'ended' });
 	}
 
-	clone() {
+	clone(overrides = {}) {
 		const cloned = new BattleState(
-			this.player1.accountId,
-			this.player2.accountId,
+			overrides.player1Id !== undefined ? overrides.player1Id : this.player1.accountId,
+			overrides.player2Id !== undefined ? overrides.player2Id : this.player2.accountId,
 			[],
 			[]
 		);
 		cloned.battleId = this.battleId;
-		cloned.player1 = this.player1.clone();
-		cloned.player2 = this.player2.clone();
-		cloned.turnNumber = this.turnNumber;
-		cloned.sequenceNumber = this.sequenceNumber;
-		cloned.phase = this.phase;
-		cloned.weather = this.weather ? { ...this.weather } : null;
-		cloned.terrain = this.terrain ? { ...this.terrain } : null;
-		cloned.eventLog = [...this.eventLog];
+
+		cloned.player1 = this.player1.clone(overrides.player1 || {});
+		cloned.player2 = this.player2.clone(overrides.player2 || {});
+
+		cloned.turnNumber = overrides.turnNumber !== undefined ? overrides.turnNumber : this.turnNumber;
+		cloned.sequenceNumber = overrides.sequenceNumber !== undefined ? overrides.sequenceNumber : this.sequenceNumber;
+		cloned.phase = overrides.phase !== undefined ? overrides.phase : this.phase;
+		cloned.weather = overrides.weather !== undefined ? overrides.weather : (this.weather ? { ...this.weather } : null);
+		cloned.terrain = overrides.terrain !== undefined ? overrides.terrain : (this.terrain ? { ...this.terrain } : null);
+		cloned.eventLog = overrides.eventLog !== undefined ? overrides.eventLog : [...this.eventLog];
+
 		return cloned;
 	}
 
@@ -248,13 +259,19 @@ export class BattleState {
 		const { target, pokemonIndex, newHp } = event;
 		const player = target === 'player1' ? state.player1 : state.player2;
 		const pokemon = player.team[pokemonIndex];
-		
-		if (pokemon) {
-			pokemon.currentHp = newHp;
-		}
-		
-		state.eventLog.push(event);
-		return state;
+
+		if (!pokemon) return state;
+
+		const updatedTeam = [...player.team];
+		updatedTeam[pokemonIndex] = pokemon.clone({ currentHp: newHp });
+
+		const overrides = target === 'player1'
+			? { player1: { team: updatedTeam } }
+			: { player2: { team: updatedTeam } };
+
+		const cloned = state.clone(overrides);
+		cloned.eventLog.push(event);
+		return cloned;
 	}
 
 	#applyStatus(state, event) {
@@ -262,12 +279,18 @@ export class BattleState {
 		const player = target === 'player1' ? state.player1 : state.player2;
 		const pokemon = player.team[pokemonIndex];
 		
-		if (pokemon) {
-			pokemon.status = status;
-		}
-		
-		state.eventLog.push(event);
-		return state;
+		if (!pokemon) return state;
+
+		const updatedTeam = [...player.team];
+		updatedTeam[pokemonIndex] = pokemon.clone({ status });
+
+		const overrides = target === 'player1'
+			? { player1: { team: updatedTeam } }
+			: { player2: { team: updatedTeam } };
+
+		const cloned = state.clone(overrides);
+		cloned.eventLog.push(event);
+		return cloned;
 	}
 
 	#removeStatus(state, event) {
@@ -275,12 +298,18 @@ export class BattleState {
 		const player = target === 'player1' ? state.player1 : state.player2;
 		const pokemon = player.team[pokemonIndex];
 		
-		if (pokemon) {
-			pokemon.status = null;
-		}
-		
-		state.eventLog.push(event);
-		return state;
+		if (!pokemon) return state;
+
+		const updatedTeam = [...player.team];
+		updatedTeam[pokemonIndex] = pokemon.clone({ status: null });
+
+		const overrides = target === 'player1'
+			? { player1: { team: updatedTeam } }
+			: { player2: { team: updatedTeam } };
+
+		const cloned = state.clone(overrides);
+		cloned.eventLog.push(event);
+		return cloned;
 	}
 
 	#fainthPokemon(state, event) {
@@ -288,26 +317,34 @@ export class BattleState {
 		const player = target === 'player1' ? state.player1 : state.player2;
 		const pokemon = player.team[pokemonIndex];
 		
-		if (pokemon) {
-			pokemon.isFainted = true;
-			pokemon.currentHp = 0;
-		}
-		
-		state.eventLog.push(event);
-		return state;
+		if (!pokemon) return state;
+
+		const updatedTeam = [...player.team];
+		updatedTeam[pokemonIndex] = pokemon.clone({ isFainted: true, currentHp: 0 });
+
+		const overrides = target === 'player1'
+			? { player1: { team: updatedTeam } }
+			: { player2: { team: updatedTeam } };
+
+		const cloned = state.clone(overrides);
+		cloned.eventLog.push(event);
+		return cloned;
 	}
 
 	#switchPokemon(state, event) {
 		const { target, toIndex } = event;
 		const player = target === 'player1' ? state.player1 : state.player2;
-		
 		const newPokemon = player.team[toIndex];
-		if (newPokemon && !newPokemon.isFainted) {
-			player.activePokemonIndex = toIndex;
-		}
-		
-		state.eventLog.push(event);
-		return state;
+
+		if (!newPokemon || newPokemon.isFainted) return state;
+
+		const overrides = target === 'player1'
+			? { player1: { activePokemonIndex: toIndex } }
+			: { player2: { activePokemonIndex: toIndex } };
+
+		const cloned = state.clone(overrides);
+		cloned.eventLog.push(event);
+		return cloned;
 	}
 
 	#changeStats(state, event) {
@@ -315,19 +352,29 @@ export class BattleState {
 		const player = target === 'player1' ? state.player1 : state.player2;
 		const pokemon = player.team[pokemonIndex];
 		
-		if (pokemon && pokemon.statStages.hasOwnProperty(stat)) {
-			// Max/min at +6/-6
-			pokemon.statStages[stat] = Math.max(-6, Math.min(6, pokemon.statStages[stat] + stages));
-		}
-		
-		state.eventLog.push(event);
-		return state;
+		if (!pokemon || !pokemon.statStages.hasOwnProperty(stat)) return state;
+
+		const newStages = { ...pokemon.statStages };
+		newStages[stat] = Math.max(-6, Math.min(6, newStages[stat] + stages));
+
+		const updatedTeam = [...player.team];
+		updatedTeam[pokemonIndex] = pokemon.clone({ statStages: newStages });
+
+		const overrides = target === 'player1'
+			? { player1: { team: updatedTeam } }
+			: { player2: { team: updatedTeam } };
+
+		const cloned = state.clone(overrides);
+		cloned.eventLog.push(event);
+		return cloned;
 	}
 
 	#changeWeather(state, event) {
 		const { weatherType, turnsRemaining } = event;
-		state.weather = weatherType ? { type: weatherType, turnsRemaining } : null;
-		state.eventLog.push(event);
-		return state;
+		const weather = weatherType ? { type: weatherType, turnsRemaining } : null;
+
+		const cloned = state.clone({ weather });
+		cloned.eventLog.push(event);
+		return cloned;
 	}
 }

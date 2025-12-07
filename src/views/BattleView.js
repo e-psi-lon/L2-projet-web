@@ -1,8 +1,8 @@
+import Pokemon from "@data/Pokemon.js";
 import BaseView from "@ui/BaseView.js";
 import BattleController from "@utils/BattleController.js";
-import { BattleState } from "@utils/data/BattleState.js";
-import Pokemon from "@utils/data/Pokemon.js";
-import { createAccountNameMessage } from "@utils/data/BattleMessages.js";
+import { BattleInstancePokemon, BattleState } from "@data/BattleState.js";
+import { createAccountNameMessage, createTeamSelectedMessage } from "@data/BattleMessages.js";
 import { div, button, img } from "@ui/dom.js";
 import { render } from "@ui/rendering.js";
 import StatBar from "@components/StatBar.js";
@@ -16,6 +16,8 @@ export default class BattleView extends BaseView {
 		this.controller = null;
 		this.battleState = null;
 		this.isHost = null;
+		this.opponentTeam = null; // Will be set when opponent sends team via message
+		this.battleStarted = false; // Track if battle has actually started
 		this.previousOpponentPokemon = null;
 		this.previousYourPokemon = null;
 		this.previousPhase = null;
@@ -27,32 +29,25 @@ export default class BattleView extends BaseView {
 			const player1Id = this.appState.getCurrentAccount();
 			const player2Id = "Opponent";
 
-			const pokemon1Data = await this.api.getPokemon(1);
-			const pokemon4Data = await this.api.getPokemon(4);
-			const pokemon7Data = await this.api.getPokemon(7);
-			const pokemon25Data = await this.api.getPokemon(25);
+			let myTeam = this.appState.getSelectedTeam();
+			if (!myTeam || myTeam.length === 0) {
+				const pokemon1 = await this.api.getPokemon(1); // Bulbasaur
+				const pokemon2 = await this.api.getPokemon(4); // Charmander
+				myTeam = [new Pokemon(pokemon1), new Pokemon(pokemon2)];
+			}
 
-			const player1Team = [
-				new Pokemon(pokemon1Data),
-				new Pokemon(pokemon4Data)
-			];
-			const player2Team = [
-				new Pokemon(pokemon7Data),
-				new Pokemon(pokemon25Data)
-			];
+			this.isHost = this.rtc.isHost;
 
-			console.log('Team 1:', player1Team.map(p => ({ name: p.name, movePool: p.movePool })));
-			console.log('Team 2:', player2Team.map(p => ({ name: p.name, movePool: p.movePool })));
+			const player1Team = this.isHost ? myTeam : [];
+			const player2Team = !this.isHost ? myTeam : [];
 
 			const initialState = new BattleState(player1Id, player2Id, player1Team, player2Team);
 			this.battleState = initialState;
-			this.isHost = this.rtc.isHost;
 
 			this.controller = new BattleController(this.rtc, this.isHost, initialState, this.api);
 
 			this.controller.onStateChange((state) => {
 				this.battleState = state;
-				console.log('Battle state changed:', JSON.stringify(state, null, 2));
 				this.#updateBattle();
 			});
 			this.controller.onResolveUsername((username) => {
@@ -63,12 +58,14 @@ export default class BattleView extends BaseView {
 			});
 
 			const accountName = this.appState.getCurrentAccountName();
-			this.controller.webrtc.send(createAccountNameMessage(accountName));
+			const teamIds = myTeam.map(p => p.id);
 
 			render(this.app,
-				div({ className: 'min-h-screen flex flex-col' },
+				div({ className: 'flex flex-col flex-1' },
 					div({ className: 'flex-1 flex flex-col items-center justify-start pt-8' },
-						div({ id: 'opponent-container', className: 'w-full max-w-sm flex flex-col items-center gap-2 px-4' })
+						div({ id: 'opponent-container', className: 'w-full max-w-sm flex flex-col items-center gap-2 px-4' },
+							div({ className: 'text-gray-400 text-center py-8 animate-dots' }, 'Waiting for opponent')
+						)
 					),
 					div({ className: 'flex-1 flex flex-col items-center justify-end pb-8' },
 						div({ id: 'player-container', className: 'w-full max-w-sm flex flex-col items-center gap-2 px-4' })
@@ -77,31 +74,87 @@ export default class BattleView extends BaseView {
 				)
 			);
 
-			this.#updateBattle();
+			this.#renderPlayerTeam();
+			if (this.isHost) {
+				this.controller.webrtc.send(createAccountNameMessage(accountName));
+				this.controller.webrtc.send(createTeamSelectedMessage(teamIds));
+				await this.#waitForOpponentTeam();
+			} else {
+				const teamPromise = this.#waitForOpponentTeam();
+				await teamPromise;
+				this.controller.webrtc.send(createAccountNameMessage(accountName));
+				this.controller.webrtc.send(createTeamSelectedMessage(teamIds));
+			}
 		} catch (error) {
 			console.error('Error rendering BattleView:', error);
 			render(this.app, div({}, `Error: ${error.message}`));
 		}
 	}
 
-	#updateBattle() {
+	#renderPlayerTeam() {
+		const state = this.battleState;
+		const yourPokemon = this.isHost ? state.player1.getActivePokemon() : state.player2.getActivePokemon();
+		if (!yourPokemon) {
+			console.warn('Player Pokemon not available yet');
+			return;
+		}
+		const accountName = this.appState.getCurrentAccountName();
+		this.#renderPlayerSection(yourPokemon, accountName);
+	}
+
+	async #waitForOpponentTeam() {
+		if (this.opponentTeam && this.battleStarted) return;
+
+		return new Promise((resolve) => {
+			const timeout = setTimeout(() => {
+				console.warn('Team timeout after 10s');
+				resolve();
+			}, 10000);
+
+			const originalSet = this.setOpponentTeam.bind(this);
+			this.setOpponentTeam = (team) => {
+				originalSet(team);
+				clearTimeout(timeout);
+				resolve();
+			};
+		});
+	}
+
+	setOpponentTeam(team) {
+		this.opponentTeam = team;
+		if (!this.battleStarted && this.battleState) {
+			const battleInstanceTeam = team.map((p, idx) => new BattleInstancePokemon(p, idx));
+			const playerOverride = { team: battleInstanceTeam };
+			const overrides = this.isHost ? { player2: playerOverride } : { player1: playerOverride };
+			this.battleState = this.battleState.clone(overrides);
+			this.battleStarted = true;
+			this.#updateBattle({ force: true });
+		}
+	}
+
+	#updateBattle(options = {}) {
+		const forceActionSection = options.forceActionSection ?? false;
+		const forceOpponent = options.forceOpponent ?? false;
+		const forcePlayer = options.forcePlayer ?? false;
+		const force = options.force ?? false;
 		const state = this.battleState;
 		const yourPokemon = this.isHost ? state.player1.getActivePokemon() : state.player2.getActivePokemon();
 		const opponentPokemon = this.isHost ? state.player2.getActivePokemon() : state.player1.getActivePokemon();
 		const hasActed = this.isHost ? state.player1.hasActed : state.player2.hasActed;
 
-		if (this.previousOpponentPokemon !== opponentPokemon || this.previousOpponentName !== this.controller.opponentName) {
+		if (opponentPokemon && (force || forceOpponent || this.previousOpponentPokemon !== opponentPokemon || this.previousOpponentName !== this.controller.opponentName)) {
 			this.#renderOpponentSection(opponentPokemon, this.controller.opponentName);
 			this.previousOpponentPokemon = opponentPokemon;
 			this.previousOpponentName = this.controller.opponentName;
 		}
 
-		if (this.previousYourPokemon !== yourPokemon) {
+		if (yourPokemon && (force || forcePlayer || this.previousYourPokemon !== yourPokemon)) {
 			const accountName = this.appState.getCurrentAccountName();
 			this.#renderPlayerSection(yourPokemon, accountName);
 			this.previousYourPokemon = yourPokemon;
 		}
-		if (this.previousPhase !== state.phase || this.previousHasActed !== hasActed) {
+
+		if (yourPokemon && (force || forceActionSection || this.previousPhase !== state.phase || this.previousHasActed !== hasActed)) {
 			this.#renderActionSection(state.phase, yourPokemon, hasActed);
 			this.previousPhase = state.phase;
 			this.previousHasActed = hasActed;
@@ -109,6 +162,7 @@ export default class BattleView extends BaseView {
 	}
 
 	#renderOpponentSection(pokemon, opponentName) {
+		if (!pokemon) return;
 		const displayName = opponentName || 'Opponent';
 		render('opponent-container',
 			div({ className: 'text-white text-sm font-semibold text-gray-400' }, displayName),
@@ -127,6 +181,7 @@ export default class BattleView extends BaseView {
 	}
 
 	#renderPlayerSection(pokemon, accountName) {
+		if (!pokemon) return;
 		render('player-container',
 			div({ className: 'text-white text-sm font-semibold text-gray-400' }, accountName || 'You'),
 			img({ src: this.api.getPokemonImageUrl(pokemon.id), alt: pokemon.name, className: 'w-32 h-32' }),
@@ -144,6 +199,7 @@ export default class BattleView extends BaseView {
 	}
 
 	#renderActionSection(phase, pokemon, hasActed) {
+		if (!pokemon) return;
 		if (phase === 'selection') render('action-container',
 			div({ className: 'grid grid-cols-2 gap-2' },
 				...pokemon.movePool.slice(0, 4).map(move =>

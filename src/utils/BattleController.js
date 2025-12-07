@@ -1,4 +1,6 @@
-import { BattleState } from '@data/BattleState.js';
+import { BattleState, BattleInstancePokemon } from '@data/BattleState.js';
+import Pokemon from '@data/Pokemon.js';
+import BaseView from '@ui/BaseView.js';
 import {
 	MessageType,
 	EventType,
@@ -466,6 +468,9 @@ export class BattleController {
 				case MessageType.ACCOUNT_NAME:
 					this.#handleAccountName(message);
 					break;
+				case MessageType.TEAM_SELECTED:
+					await this.#handleTeamSelected(message);
+					break;
 				case MessageType.TURN_START:
 					this.#handleTurnStart(message);
 					break;
@@ -498,8 +503,12 @@ export class BattleController {
 
 	#handleMoveSelected(message) {
 		const { moveId, targetIndex } = message;
-		this.state.player2.selectedMove = { moveId, targetIndex };
-		this.state.player2.hasActed = true;
+		this.state = this.state.clone({
+			player2: {
+				selectedMove: { moveId, targetIndex },
+				hasActed: true
+			}
+		});
 		this.#notifyListeners();
 
 		if (this.state.player1.hasActed && this.state.player2.hasActed) {
@@ -509,8 +518,12 @@ export class BattleController {
 
 	#handleSwitchSelected(message) {
 		const { newPokemonIndex } = message;
-		this.state.player2.selectedSwitch = newPokemonIndex;
-		this.state.player2.hasActed = true;
+		this.state = this.state.clone({
+			player2: {
+				selectedSwitch: newPokemonIndex,
+				hasActed: true
+			}
+		});
 		this.#notifyListeners();
 
 		if (this.state.player1.hasActed && this.state.player2.hasActed) {
@@ -519,9 +532,11 @@ export class BattleController {
 	}
 
 	#handleTurnStart(message) {
-		this.state.turnNumber = message.turnNumber;
-		this.state.sequenceNumber = message.sequenceNumber;
-		this.state.phase = 'resolution';
+		this.state = this.state.clone({
+			turnNumber: message.turnNumber,
+			sequenceNumber: message.sequenceNumber,
+			phase: 'resolution'
+		});
 		this.#notifyListeners();
 	}
 
@@ -533,6 +548,24 @@ export class BattleController {
 	#handleAccountName(message) {
 		this.opponentName = message.accountName;
 		this.#notifyListeners('usernameResolved');
+	}
+
+	async #handleTeamSelected(message) {
+		const { teamIds } = message;
+		try {
+			const pokemonPromises = teamIds.map(id => this.api.getPokemon(id));
+			const pokemonDataList = await Promise.all(pokemonPromises);
+			const team = pokemonDataList.map(data => new Pokemon(data));
+			const battleInstanceTeam = team.map((p, idx) => new BattleInstancePokemon(p, idx));
+			const playerOverride = { team: battleInstanceTeam };
+			const overrides = this.isHost ? { player2: playerOverride } : { player1: playerOverride };
+			this.state = this.state.clone(overrides);
+			const currentView = BaseView.getCurrentView();
+			if (currentView && typeof currentView.setOpponentTeam === 'function')
+				currentView.setOpponentTeam(team);
+		} catch (error) {
+			console.error('Failed to load opponent team:', error);
+		}
 	}
 
 	#handleTurnEnd() {
