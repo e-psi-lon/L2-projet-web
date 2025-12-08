@@ -192,6 +192,7 @@ export class BattleController {
 		if (winner !== null) {
 			this.state = this.state.endBattle();
 			events.push({ type: EventType.TURN_END_EVENT });
+			this.#awardXpToWinner(winner);
 		}
 
 		this.webrtc.send(createBattleEventMessage(this.state.sequenceNumber, events));
@@ -423,6 +424,22 @@ export class BattleController {
 		if (turnsRemaining <= 0)
 			return createWeatherChangeEvent(null, 0);
 		return createWeatherChangeEvent(this.state.weather.type, turnsRemaining);
+	}
+
+	#awardXpToWinner(winnerIndex) {
+		const winner = winnerIndex === 0 ? this.state.player1 : this.state.player2;
+		const loser = winnerIndex === 0 ? this.state.player2 : this.state.player1;
+		let totalXpAwarded = 0;
+		for (const loserPokemon of loser.team) {
+			if (!loserPokemon.isFainted) {
+				const xpGain = Math.ceil(loserPokemon.level * 10);
+				totalXpAwarded += xpGain;
+			}
+		}
+		const activeWinnerPokemon = winner.getActivePokemon();
+		if (activeWinnerPokemon) {
+			activeWinnerPokemon.gainXp(totalXpAwarded);
+		}
 	}
 
 	async #detectSecondaryEffects(move, targetPokemon, playerIndex) {

@@ -1,18 +1,23 @@
 class Pokemon {
-	constructor(apiData, level = null) {
+	constructor(apiData, level = null, xp = null) {
 		this.id = apiData.id;
 		this.name = apiData.name;
-		if (level === null || level === undefined) {
-			const baseExp = apiData.base_experience || 0;
+		const baseExp = apiData.base_experience || 0;
+		
+		if (level === null || level === undefined)
 			this.level = Math.max(1, Math.min(100, Math.floor(Math.cbrt(baseExp) + 1)));
-		} else this.level = level;
+		else this.level = level;
+	
+		if (xp !== null && xp !== undefined) this.xp = xp;
+		else this.xp = Math.ceil(baseExp / 5);
+	
+		
 		this.types = (apiData.types || []).map(t => t.type.name);
 		this.stats = {};
 		(apiData.stats || []).forEach(stat => {
 			this.stats[stat.stat.name] = stat.base_stat;
 		});
 		
-		// Available moves
 		this.movePool = apiData.moves || [];
 
 		this._apiData = apiData;
@@ -24,6 +29,20 @@ class Pokemon {
 
 	getPrimaryType() {
 		return this.types[0] || 'normal';
+	}
+
+	gainXp(amount) {
+		if (this.level >= 100) return null;
+		this.xp += amount;
+		const xpNeeded = Math.ceil(100 * Math.pow(1.1, this.level - 1));
+		
+		if (this.xp >= xpNeeded) {
+			this.xp -= xpNeeded;
+			this.level = Math.min(100, this.level + 1);
+			return this.level;
+		}
+		
+		return null;
 	}
 
 	createBattleInstance() {
@@ -44,6 +63,7 @@ class Pokemon {
 			id: this.id,
 			name: this.name,
 			level: this.level,
+			xp: this.xp,
 			types: this.types,
 			stats: this.stats,
 			movePool: this.movePool
@@ -65,7 +85,7 @@ class Pokemon {
 			})),
 			moves: data.movePool || []
 		};
-		return new Pokemon(apiData, data.level);
+		return new Pokemon(apiData, data.level, data.xp || 0);
 	}
 }
 
