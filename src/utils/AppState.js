@@ -9,6 +9,7 @@ export default class AppState {
 		this.listeners = [];
 		this.battleRtc = null;
 		this.inventories = new Map(); // accountId -> InventoryManager
+		this.inventories.set(null, null);
 	}
 
 	setApi(api) {
@@ -21,7 +22,7 @@ export default class AppState {
 
 	#loadAccounts() {
 		try {
-			const data = localStorage.getItem('pokemon-pvp-accounts');
+			const data = localStorage.getItem('pokemon-accounts');
 			return data ? JSON.parse(data) : [];
 		} catch (error) {
 			console.error('Failed to load accounts:', error);
@@ -31,7 +32,9 @@ export default class AppState {
 
 	#saveAccounts() {
 		try {
-			localStorage.setItem('pokemon-pvp-accounts', JSON.stringify(this.accounts));
+			localStorage.setItem('pokemon-accounts', JSON.stringify(this.accounts));
+			if (this.currentAccount)
+				localStorage.setItem('pokemon-current-account', this.currentAccount);
 		} catch (error) {
 			console.error('Failed to save accounts:', error);
 		}
@@ -48,6 +51,7 @@ export default class AppState {
 
 	setCurrentAccount(account) {
 		this.currentAccount = account;
+		this.#saveAccounts();
 		this.notifyListeners();
 	}
 
