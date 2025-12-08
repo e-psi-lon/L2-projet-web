@@ -3,15 +3,16 @@ import { render, resolveParent } from "./rendering.js";
 
 const containers = {};
 
-function getPositionClass(position) {
+function getPositionClass(position, isAbsolute = false) {
+    const positionType = isAbsolute ? 'absolute' : 'fixed';
     switch (position) {
-        case 'top-right': return 'fixed top-4 right-4';
-        case 'top-left': return 'fixed top-4 left-4';
-        case 'bottom-right': return 'fixed bottom-4 right-4';
-        case 'bottom-left': return 'fixed bottom-4 left-4';
-        case 'top-center': return 'fixed top-4 left-1/2 transform -translate-x-1/2';
-        case 'bottom-center': return 'fixed bottom-4 left-1/2 transform -translate-x-1/2';
-        default: return 'fixed top-4 right-4';
+        case 'top-right': return `${positionType} top-4 right-4`;
+        case 'top-left': return `${positionType} top-4 left-4`;
+        case 'bottom-right': return `${positionType} bottom-4 right-4`;
+        case 'bottom-left': return `${positionType} bottom-4 left-4`;
+        case 'top-center': return `${positionType} top-4 left-1/2 transform -translate-x-1/2`;
+        case 'bottom-center': return `${positionType} bottom-4 left-1/2 transform -translate-x-1/2`;
+        default: return `${positionType} top-4 right-4`;
     }
 }
 
@@ -22,11 +23,15 @@ export function showToast({ text, color, duration, position, parent } = {}) {
     position = position ?? 'top-right';
     parent = parent ?? document.body;
     const actualParent = resolveParent(parent);
-    let container = containers[position];
+    const isCustomParent = parent !== document.body;
+    if (isCustomParent && getComputedStyle(actualParent).position === 'static')
+        actualParent.style.position = 'relative';
+    const containerKey = `${position}-${isCustomParent ? actualParent.id || 'custom' : 'root'}`;
+    let container = containers[containerKey];
     if (!container || container.parentNode !== actualParent) {
-        container = div({ className: getPositionClass(position) });
+        container = div({ className: getPositionClass(position, isCustomParent) });
         actualParent.appendChild(container);
-        containers[position] = container;
+        containers[containerKey] = container;
     }
 
     const toast = div({
@@ -40,7 +45,9 @@ export function showToast({ text, color, duration, position, parent } = {}) {
         toast.remove();
         if (container.childNodes.length === 0) {
             container.remove();
-            delete containers[position];
+            delete containers[containerKey];
         }
     }, duration);
 }
+
+export default showToast;
