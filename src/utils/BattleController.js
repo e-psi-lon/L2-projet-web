@@ -41,11 +41,22 @@ export class BattleController {
 		this.listeners.push({ type: 'usernameResolved', callback });
 	}
 
+	onBattleEvent(callback) {
+		console.log('[BattleController] onBattleEvent listener registered');
+		this.listeners.push({ type: 'battleEvent', callback });
+	}
+
 	#notifyListeners(type = 'stateChange') {
 		if (type === 'stateChange')
 			this.listeners.filter(l => l.type === 'stateChange').forEach(l => l.callback(this.state));
 		else if (type === 'usernameResolved')
 			this.listeners.filter(l => l.type === 'usernameResolved').forEach(l => l.callback(this.opponentName));
+	}
+
+	#notifyBattleEvent(eventInfo) {
+		const battleEventListeners = this.listeners.filter(l => l.type === 'battleEvent');
+		console.log(`[BattleController] Notifying ${battleEventListeners.length} battle event listeners about:`, eventInfo.type);
+		battleEventListeners.forEach(l => l.callback(eventInfo));
 	}
 
 	#setupWebRTCHandlers() {
@@ -92,6 +103,7 @@ export class BattleController {
 	}
 
 	async startTurn() {
+		console.log(`[BattleController] startTurn called, isHost: ${this.isHost}`);
 		if (!this.isHost) return;
 		if (!this.state.player1.hasActed || !this.state.player2.hasActed) {
 			console.warn('Cannot start turn - not all players have acted');
@@ -185,8 +197,14 @@ export class BattleController {
 			events.push({ type: EventType.TURN_END_EVENT });
 		}
 
+		console.log(`[BattleController] Sending ${events.length} battle events via WebRTC`);
 		this.webrtc.send(createBattleEventMessage(this.state.sequenceNumber, events));
+		for (const event of events) {
+			console.log(`[BattleController] Emitting battle event:`, event.type);
+			this.#notifyBattleEvent(event);
+		}
 		this.#notifyListeners();
+
 		if (winner !== null) {
 			const loser = winner === 0 ? 1 : 0;
 			this.webrtc.send(createBattleEndMessage(winner, loser));
@@ -391,8 +409,6 @@ export class BattleController {
 			const weather = weatherMap[moveName];
 			return createWeatherChangeEvent(weather.type, weather.turns);
 		}
-
-		// Alternative detection: check effect entries for weather keywords
 		const effectText = (move.effect_entries[0]?.effect || '').toLowerCase();
 		if (effectText.includes('sandstorm'))
 			return createWeatherChangeEvent('sandstorm', 5);
@@ -413,8 +429,6 @@ export class BattleController {
 
 		if (turnsRemaining <= 0)
 			return createWeatherChangeEvent(null, 0);
-
-		// Weather continues for another turn
 		return createWeatherChangeEvent(this.state.weather.type, turnsRemaining);
 	}
 
@@ -423,15 +437,13 @@ export class BattleController {
 		if (!move.effect_entries || move.effect_entries.length === 0) return events;
 
 		const effectChance = move.effect_chance || 0;
-		if (effectChance <= 0) return events; // No secondary effect
+		if (effectChance <= 0) return events;
 
-		// Only apply secondary effect with the specified probability
 		if (Math.random() * 100 > effectChance) return events;
 
 		const effectText = (move.effect_entries[0]?.effect || '').toLowerCase();
 		const targetPlayerStr = playerIndex === 0 ? 'player2' : 'player1';
 
-		// Detect status effects
 		const statusMap = {
 			'freeze': ['freeze', 'frozen'],
 			'burn': ['burn', 'burned'],
@@ -541,7 +553,12 @@ export class BattleController {
 	}
 
 	#handleBattleEvents(message) {
+		console.log(`[BattleController] Received ${message.events.length} battle events`);
 		this.state = this.state.applyEvents(message.events);
+		for (const event of message.events) {
+			console.log(`[BattleController] Emitting battle event:`, event.type);
+			this.#notifyBattleEvent(event);
+		}
 		this.#notifyListeners();
 	}
 

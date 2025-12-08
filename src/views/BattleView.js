@@ -2,10 +2,11 @@ import Pokemon from "@data/Pokemon.js";
 import BaseView from "@ui/BaseView.js";
 import BattleController from "@utils/BattleController.js";
 import { BattleInstancePokemon, BattleState } from "@data/BattleState.js";
-import { createAccountNameMessage, createTeamSelectedMessage } from "@data/BattleMessages.js";
+import { createAccountNameMessage, createTeamSelectedMessage, EventType } from "@data/BattleMessages.js";
 import { div, button, img } from "@ui/dom.js";
 import { render } from "@ui/rendering.js";
 import StatBar from "@components/StatBar.js";
+import showToast from "@utils/ui/toast.js";
 
 export default class BattleView extends BaseView {
 	constructor(app, appState) {
@@ -16,8 +17,8 @@ export default class BattleView extends BaseView {
 		this.controller = null;
 		this.battleState = null;
 		this.isHost = null;
-		this.opponentTeam = null; // Will be set when opponent sends team via message
-		this.battleStarted = false; // Track if battle has actually started
+		this.opponentTeam = null;
+		this.battleStarted = false;
 		this.previousOpponentPokemon = null;
 		this.previousYourPokemon = null;
 		this.previousPhase = null;
@@ -57,19 +58,25 @@ export default class BattleView extends BaseView {
 				);
 			});
 
+			this.controller.onBattleEvent((event) => {
+				console.log(`[BattleView] Received battle event:`, event.type);
+				this.#displayEventToast(event);
+			});
+
 			const accountName = this.appState.getCurrentAccountName();
 			const teamIds = myTeam.map(p => p.id);
 
 			render(this.app,
 				div({ className: 'flex flex-col flex-1' },
-					div({ className: 'flex-1 flex flex-col items-center justify-start pt-8' },
-						div({ id: 'opponent-container', className: 'w-full max-w-sm flex flex-col items-center gap-2 px-4' },
-							div({ className: 'text-gray-400 text-center py-8 animate-dots' }, 'Waiting for opponent')
-						)
-					),
-					div({ className: 'flex-1 flex flex-col items-center justify-end pb-8' },
-						div({ id: 'player-container', className: 'w-full max-w-sm flex flex-col items-center gap-2 px-4' })
-					),
+					div( { id: 'battle-container', className: 'flex-1 flex flex-col' },
+						div({ className: 'flex-1 flex flex-col items-center justify-start pt-8' },
+							div({ id: 'opponent-container', className: 'w-full max-w-sm flex flex-col items-center gap-2 px-4' },
+								div({ className: 'text-gray-400 text-center py-8 animate-dots' }, 'Waiting for opponent')
+							)
+						),
+						div({ className: 'flex-1 flex flex-col items-center justify-end pb-8' },
+							div({ id: 'player-container', className: 'w-full max-w-sm flex flex-col items-center gap-2 px-4' })
+						)),
 					div({ id: 'action-container', className: 'p-4 border-t border-slate-700' })
 				)
 			);
@@ -158,6 +165,58 @@ export default class BattleView extends BaseView {
 			this.#renderActionSection(state.phase, yourPokemon, hasActed);
 			this.previousPhase = state.phase;
 			this.previousHasActed = hasActed;
+		}
+	}
+
+	#displayEventToast(event) {
+		let text = '';
+
+		const eventIsForOpponent = this.isHost ? event.player === 1 : event.player === 0;
+		const position = eventIsForOpponent ? 'top-left' : 'bottom-right';
+
+		const player = event.player === 0 ? this.battleState.player1 : this.battleState.player2;
+		const activePokemon = player ? player.getActivePokemon() : null;
+		const battleContainer = document.getElementById('battle-container');
+
+		switch (event.type) {
+			case EventType.MOVE_USED:
+				if (activePokemon) {
+					const moveInPool = activePokemon.movePool.find(m => this.api.getMoveId(m.move) === event.moveId);
+					const moveName = moveInPool ? moveInPool.move.name : 'a move';
+					text = `${activePokemon.name} used ${moveName}!`;
+				} else text = 'A move was used!';
+				break;
+			case EventType.MOVE_MISSED:
+				text = activePokemon ? `${activePokemon.name} missed!` : 'Attack missed!';
+				break;
+			case EventType.DAMAGE:
+				text = `${event.amount || event.newHp || '?'} damage dealt!`;
+				break;
+			case EventType.POKEMON_FAINTED:
+				text = activePokemon ? `${activePokemon.name} fainted!` : 'Pokémon fainted!';
+				break;
+			case EventType.STATUS_APPLY:
+				text = activePokemon ? `${activePokemon.name} is now ${event.status}!` : `Pokémon is now ${event.status}!`;
+				break;
+			case EventType.STATUS_REMOVE:
+				text = activePokemon ? `${activePokemon.name} is no longer ${event.status}.` : `Pokémon is no longer ${event.status}.`;
+				break;
+			case EventType.WEATHER_CHANGE:
+				text = event.weatherType ? `Weather changed to ${event.weatherType}!` : 'Weather cleared!';
+				break;
+			default:
+				return;
+		}
+
+		if (text) {
+			console.log(text);
+			showToast({
+				text,
+				color: eventIsForOpponent ? 'bg-orange-600' : 'bg-blue-600',
+				duration: 4000,
+				position,
+				parent: battleContainer || document.body
+			});
 		}
 	}
 
