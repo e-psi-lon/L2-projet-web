@@ -152,6 +152,10 @@ export default class PokeAPI {
 		return await this.#getSingle('pokemon-species', id);
 	}
 
+	async getPokemonSpeciesCount() {
+		return (await this.get('pokemon-species?limit=1')).count;
+	}
+
 	getPokemonSpeciesId(species) {
 		return this.#extractId(species, 'Invalid species object');
 	}
@@ -218,6 +222,12 @@ export default class PokeAPI {
 		return this.#extractId(item, 'Invalid item object');
 	}
 
+	async getItemsByCategory(categoryName) {
+		if (typeof categoryName !== 'string') throw new Error('Category name must be a string');
+		const category = await this.#getSingle('item-category', categoryName);
+		return category.items || [];
+	}
+
 	async getItemCategories(limit = 100, offset = 0) {
 		return await this.#getWithLimitAndOffset('item-category', limit, offset);
 	}
@@ -240,6 +250,23 @@ export default class PokeAPI {
 
 	getItemAttributeId(attribute) {
 		return this.#extractId(attribute, 'Invalid item attribute object');
+	}
+
+	async getBerryCount() {
+		return (await this.get('berry?limit=1')).count;
+	}
+
+	async getBerries(limit = 100, offset = 0) {
+		return await this.#getWithLimitAndOffset('berry', limit, offset);
+	}
+
+	async getBerry(id) {
+		if (typeof id !== 'number') throw new Error('ID must be a number');
+		return await this.#getSingle('berry', id);
+	}
+
+	getBerryId(berry) {
+		return this.#extractId(berry, 'Invalid berry object');
 	}
 
 	getMove(id) {
