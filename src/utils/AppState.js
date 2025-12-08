@@ -42,7 +42,6 @@ export default class AppState {
 
 	setCurrentView(view) {
 		this.currentView = view;
-		this.notifyListeners();
 	}
 
 	getCurrentView() {
@@ -52,7 +51,8 @@ export default class AppState {
 	setCurrentAccount(account) {
 		this.currentAccount = account;
 		this.#saveAccounts();
-		this.notifyListeners();
+		this.#notifyStateChange();
+		this.#notifyAccountChange(account);
 	}
 
 	getCurrentAccount() {
@@ -80,7 +80,7 @@ export default class AppState {
 		const account = { id: crypto.randomUUID(), name };
 		this.accounts.push(account);
 		this.#saveAccounts();
-		this.notifyListeners();
+		this.#notifyStateChange();
 		return account;
 	}
 
@@ -106,19 +106,28 @@ export default class AppState {
 
 	getInventory() {
 		if (!this.inventories.has(this.currentAccount)) {
-			this.inventories.set(this.currentAccount, new InventoryManager(this.currentAccount));
+			this.inventories.set(this.currentAccount, new InventoryManager(this.currentAccount, this.api));
 		}
 		return this.inventories.get(this.currentAccount);
 	}
 
-	subscribe(listener) {
-		this.listeners.push(listener);
-		return () => {
-			this.listeners = this.listeners.filter(l => l !== listener);
-		};
+	onAccountChange(callback) {
+		this.listeners.push({ type: 'accountChange', callback });
 	}
 
-	notifyListeners() {
-		this.listeners.forEach(listener => listener(this));
+	onStateChange(callback) {
+		this.listeners.push({ type: 'stateChange', callback });
+	}
+
+	#notifyAccountChange(accountId) {
+		this.listeners
+			.filter(l => l.type === 'accountChange')
+			.forEach(l => l.callback(accountId));
+	}
+
+	#notifyStateChange() {
+		this.listeners
+			.filter(l => l.type === 'stateChange')
+			.forEach(l => l.callback(this));
 	}
 }
