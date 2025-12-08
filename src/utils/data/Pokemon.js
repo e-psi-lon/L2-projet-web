@@ -38,6 +38,35 @@ class Pokemon {
 	toString() {
 		return `${this.name} (#${this.id}) [${this.types.join('/')}]`;
 	}
+
+	toJSON() {
+		return {
+			id: this.id,
+			name: this.name,
+			level: this.level,
+			types: this.types,
+			stats: this.stats,
+			movePool: this.movePool
+		};
+	}
+
+	static fromJSON(data) {
+		const apiData = {
+			id: data.id,
+			name: data.name,
+			types: data.types.map(type => 
+				typeof type === 'string' 
+					? { type: { name: type } }
+					: type
+			),
+			stats: Object.entries(data.stats).map(([name, base_stat]) => ({
+				stat: { name },
+				base_stat
+			})),
+			moves: data.movePool || []
+		};
+		return new Pokemon(apiData, data.level);
+	}
 }
 
 export default Pokemon;

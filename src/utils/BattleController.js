@@ -556,19 +556,17 @@ export class BattleController {
 		this.#notifyListeners('usernameResolved');
 	}
 
-	async #handleTeamSelected(message) {
-		const { teamIds } = message;
+	#handleTeamSelected(message) {
+		const { team } = message;
 		try {
-			const pokemonPromises = teamIds.map(id => this.api.getPokemon(id));
-			const pokemonDataList = await Promise.all(pokemonPromises);
-			const team = pokemonDataList.map(data => new Pokemon(data));
-			const battleInstanceTeam = team.map((p, idx) => new BattleInstancePokemon(p, idx));
+			const pokemonTeam = team.map(pokemonData => Pokemon.fromJSON(pokemonData));
+			const battleInstanceTeam = pokemonTeam.map((p, idx) => new BattleInstancePokemon(p, idx));
 			const playerOverride = { team: battleInstanceTeam };
 			const overrides = this.isHost ? { player2: playerOverride } : { player1: playerOverride };
 			this.state = this.state.clone(overrides);
 			const currentView = BaseView.getCurrentView();
 			if (currentView && typeof currentView.setOpponentTeam === 'function')
-				currentView.setOpponentTeam(team);
+				currentView.setOpponentTeam(pokemonTeam);
 		} catch (error) {
 			console.error('Failed to load opponent team:', error);
 		}

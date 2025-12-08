@@ -63,7 +63,6 @@ export default class BattleView extends BaseView {
 			});
 
 			const accountName = this.appState.getCurrentAccountName();
-			const teamIds = myTeam.map(p => p.id);
 
 			render(this.app,
 				div({ className: 'flex flex-col flex-1' },
@@ -83,13 +82,13 @@ export default class BattleView extends BaseView {
 			this.#renderPlayerTeam();
 			if (this.isHost) {
 				this.controller.webrtc.send(createAccountNameMessage(accountName));
-				this.controller.webrtc.send(createTeamSelectedMessage(teamIds));
+				this.controller.webrtc.send(createTeamSelectedMessage(myTeam));
 				await this.#waitForOpponentTeam();
 			} else {
 				const teamPromise = this.#waitForOpponentTeam();
 				await teamPromise;
 				this.controller.webrtc.send(createAccountNameMessage(accountName));
-				this.controller.webrtc.send(createTeamSelectedMessage(teamIds));
+				this.controller.webrtc.send(createTeamSelectedMessage(myTeam));
 			}
 		} catch (error) {
 			console.error('Error rendering BattleView:', error);

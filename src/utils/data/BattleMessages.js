@@ -42,11 +42,18 @@ export const createReadyMessage = (accountId) => ({
 });
 
 /**
- * { type: 'team_selected', teamIds: [id1, id2, ...], timestamp }
+ * { type: 'team_selected', team: [pokemonData1, pokemonData2, ...], timestamp }
  */
-export const createTeamSelectedMessage = (teamIds) => ({
+export const createTeamSelectedMessage = (team) => ({
 	type: MessageType.TEAM_SELECTED,
-	teamIds,
+	team: team.map(pokemon => ({
+		id: pokemon.id,
+		name: pokemon.name,
+		level: pokemon.level,
+		types: pokemon.types,
+		stats: pokemon.stats,
+		movePool: pokemon.movePool
+	})),
 	timestamp: Date.now()
 });
 

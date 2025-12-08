@@ -1,4 +1,5 @@
 import Item from '@data/Item.js';
+import Pokemon from '@data/Pokemon.js';
 
 class InventoryManager {
 	#pokemon = [];
@@ -21,9 +22,9 @@ class InventoryManager {
 			const data = localStorage.getItem(this.#storageKey);
 			if (!data) return;
 			const { pokemon, items, selectedTeam } = JSON.parse(data);
-			this.#pokemon = pokemon || [];
+			this.#pokemon = (pokemon || []).map(pokemonData => Pokemon.fromJSON(pokemonData));
 			this.#items = new Map(items || []);
-			this.#selectedTeam = selectedTeam || [];
+			this.#selectedTeam = (selectedTeam || []).map(pokemonData => Pokemon.fromJSON(pokemonData));
 		} catch (error) {
 			console.error('Failed to load inventory from storage:', error);
 		}
@@ -33,9 +34,9 @@ class InventoryManager {
 		if (!this.#storageKey) return;
 		try {
 			const data = {
-				pokemon: this.#pokemon,
+				pokemon: this.#pokemon.map(p => p.toJSON()),
 				items: Array.from(this.#items.entries()),
-				selectedTeam: this.#selectedTeam
+				selectedTeam: this.#selectedTeam.map(p => p.toJSON())
 			};
 			localStorage.setItem(this.#storageKey, JSON.stringify(data));
 		} catch (error) {
