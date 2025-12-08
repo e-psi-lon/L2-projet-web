@@ -42,7 +42,6 @@ export class BattleController {
 	}
 
 	onBattleEvent(callback) {
-		console.log('[BattleController] onBattleEvent listener registered');
 		this.listeners.push({ type: 'battleEvent', callback });
 	}
 
@@ -55,7 +54,6 @@ export class BattleController {
 
 	#notifyBattleEvent(eventInfo) {
 		const battleEventListeners = this.listeners.filter(l => l.type === 'battleEvent');
-		console.log(`[BattleController] Notifying ${battleEventListeners.length} battle event listeners about:`, eventInfo.type);
 		battleEventListeners.forEach(l => l.callback(eventInfo));
 	}
 
@@ -103,7 +101,6 @@ export class BattleController {
 	}
 
 	async startTurn() {
-		console.log(`[BattleController] startTurn called, isHost: ${this.isHost}`);
 		if (!this.isHost) return;
 		if (!this.state.player1.hasActed || !this.state.player2.hasActed) {
 			console.warn('Cannot start turn - not all players have acted');
@@ -197,12 +194,8 @@ export class BattleController {
 			events.push({ type: EventType.TURN_END_EVENT });
 		}
 
-		console.log(`[BattleController] Sending ${events.length} battle events via WebRTC`);
 		this.webrtc.send(createBattleEventMessage(this.state.sequenceNumber, events));
-		for (const event of events) {
-			console.log(`[BattleController] Emitting battle event:`, event.type);
-			this.#notifyBattleEvent(event);
-		}
+		for (const event of events) this.#notifyBattleEvent(event);
 		this.#notifyListeners();
 
 		if (winner !== null) {
@@ -553,12 +546,8 @@ export class BattleController {
 	}
 
 	#handleBattleEvents(message) {
-		console.log(`[BattleController] Received ${message.events.length} battle events`);
 		this.state = this.state.applyEvents(message.events);
-		for (const event of message.events) {
-			console.log(`[BattleController] Emitting battle event:`, event.type);
-			this.#notifyBattleEvent(event);
-		}
+		for (const event of message.events) this.#notifyBattleEvent(event);
 		this.#notifyListeners();
 	}
 

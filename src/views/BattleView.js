@@ -59,7 +59,6 @@ export default class BattleView extends BaseView {
 			});
 
 			this.controller.onBattleEvent((event) => {
-				console.log(`[BattleView] Received battle event:`, event.type);
 				this.#displayEventToast(event);
 			});
 
