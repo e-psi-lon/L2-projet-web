@@ -56,6 +56,11 @@ export default class AppState {
 	}
 
 	getCurrentAccount() {
+		if (this.currentAccount === null && this.accounts.length > 0) {
+			const savedAccount = localStorage.getItem('pokemon-current-account');
+			if (savedAccount && this.accounts.some(a => a.id === savedAccount))
+				this.currentAccount = savedAccount;
+		}
 		return this.currentAccount;
 	}
 
