@@ -231,7 +231,8 @@ export default class BattleView extends BaseView {
 				showLabel: true,
 				showValue: true,
 				barHeight: 'h-2',
-				gap: 'gap-0'
+				gap: 'gap-0',
+				colorThresholds: { red: 25, orange: 50, yellow: 75, green: 101 }
 			}),
 			img({ src: this.api.getPokemonImageUrl(pokemon.id), alt: pokemon.name, className: 'w-32 h-32' })
 		);
@@ -249,7 +250,8 @@ export default class BattleView extends BaseView {
 				showLabel: true,
 				showValue: true,
 				barHeight: 'h-2',
-				gap: 'gap-0'
+				gap: 'gap-0',
+				colorThresholds: { red: 25, orange: 50, yellow: 75, green: 101 }
 			}),
 			div({ className: 'text-white text-lg font-semibold' }, pokemon.name)
 		);
