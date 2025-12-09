@@ -2,6 +2,7 @@ class Pokemon {
 	constructor(apiData, level = null, xp = null) {
 		this.id = apiData.id;
 		this.name = apiData.name;
+		this.instanceId = apiData.instanceId || crypto.randomUUID();
 		const baseExp = apiData.base_experience || 0;
 		
 		if (level === null || level === undefined)
@@ -61,6 +62,7 @@ class Pokemon {
 	toJSON() {
 		return {
 			id: this.id,
+			instanceId: this.instanceId,
 			name: this.name,
 			level: this.level,
 			xp: this.xp,
@@ -73,6 +75,7 @@ class Pokemon {
 	static fromJSON(data) {
 		const apiData = {
 			id: data.id,
+			instanceId: data.instanceId,
 			name: data.name,
 			types: data.types.map(type => 
 				typeof type === 'string' 

@@ -3,6 +3,7 @@ import { EventType } from '@data/BattleMessages.js';
 export class BattleInstancePokemon {
 	constructor(pokemon, index) {
 		this.id = pokemon.id;
+		this.instanceId = pokemon.instanceId;
 		this.name = pokemon.name;
 		this.level = pokemon.level || 100;
 		this.index = index;

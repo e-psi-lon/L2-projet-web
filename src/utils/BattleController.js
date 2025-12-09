@@ -103,6 +103,39 @@ export class BattleController {
 			this.startTurn().catch(err => console.error('Error starting turn:', err));
 	}
 
+	selectSwitch(pokemonIndex) {
+		const player = this.isHost ? this.state.player1 : this.state.player2;
+		const targetPokemon = player.team[pokemonIndex];
+		
+		if (!targetPokemon || targetPokemon.isFainted) {
+			console.error(`Invalid switch: Pokemon at index ${pokemonIndex} is fainted or doesn't exist`);
+			return;
+		}
+
+		if (pokemonIndex === player.activePokemonIndex) {
+			console.warn('Pokemon already active');
+			return;
+		}
+
+		player.selectedSwitch = pokemonIndex;
+		player.hasActed = true;
+
+		if (!this.isHost) try {
+			this.webrtc.send({
+				type: MessageType.SWITCH_SELECTED,
+				pokemonIndex,
+				timestamp: Date.now()
+			});
+		} catch (error) {
+			console.warn('Failed to send switch selection:', error);
+		}
+
+		this.#notifyListeners();
+
+		if (this.state.player1.hasActed && this.state.player2.hasActed)
+			this.startTurn().catch(err => console.error('Error starting turn:', err));
+	}
+
 	async startTurn() {
 		if (!this.isHost) return;
 		if (!this.state.player1.hasActed || !this.state.player2.hasActed) {
@@ -119,20 +152,28 @@ export class BattleController {
 		if (!this.isHost) return;
 		const events = [];
 		if (this.state.player1.selectedSwitch !== null) {
+			const fromName = this.state.player1.team[this.state.player1.activePokemonIndex]?.name;
+			const toName = this.state.player1.team[this.state.player1.selectedSwitch]?.name;
 			const switchEvent = createPokemonSwitchEvent(
 				'player1',
 				this.state.player1.activePokemonIndex,
-				this.state.player1.selectedSwitch
+				this.state.player1.selectedSwitch,
+				fromName,
+				toName
 			);
 			events.push(switchEvent);
 			this.state = this.state.applyEvent(switchEvent);
 		}
 
 		if (this.state.player2.selectedSwitch !== null) {
+			const fromName = this.state.player2.team[this.state.player2.activePokemonIndex]?.name;
+			const toName = this.state.player2.team[this.state.player2.selectedSwitch]?.name;
 			const switchEvent = createPokemonSwitchEvent(
 				'player2',
 				this.state.player2.activePokemonIndex,
-				this.state.player2.selectedSwitch
+				this.state.player2.selectedSwitch,
+				fromName,
+				toName
 			);
 			events.push(switchEvent);
 			this.state = this.state.applyEvent(switchEvent);
@@ -220,9 +261,17 @@ export class BattleController {
 
 		const attackerPokemon = attacker.getActivePokemon();
 		const targetPlayer = targetIndex === -1 ? attacker : defender;
-		const targetPokemon = targetIndex === -1
-			? attackerPokemon
-			: targetPlayer.team[targetIndex];
+		const targetPokemon = targetPlayer.team[targetIndex];
+
+		console.log('🎯 ATTACK DEBUG:', {
+			attacker: `player${playerIndex} (${attackerPokemon.name})`,
+			targetIndex,
+			targetPlayer: targetIndex === -1 ? `player${playerIndex}` : `player${playerIndex === 0 ? 1 : 0}`,
+			targetPokemon: targetPokemon?.name,
+			targetPokemonIndex: targetPokemon?.index,
+			defenderTeam: defender.team.map(p => `[${p.index}] ${p.name}`),
+			attackerTeam: attacker.team.map(p => `[${p.index}] ${p.name}`)
+		});
 
 		events.push(createMoveUsedEvent(
 			playerIndex,
@@ -326,10 +375,13 @@ export class BattleController {
 		if (this.state.player1.getActivePokemon().isFainted) {
 			const nextPokemon = this.state.player1.team.find(p => !p.isFainted);
 			if (nextPokemon) {
+				const fromName = this.state.player1.getActivePokemon().name;
 				const switchEvent = createPokemonSwitchEvent(
 					'player1',
 					this.state.player1.activePokemonIndex,
-					nextPokemon.index
+					nextPokemon.index,
+					fromName,
+					nextPokemon.name
 				);
 				events.push(switchEvent);
 			}
@@ -338,10 +390,13 @@ export class BattleController {
 		if (this.state.player2.getActivePokemon().isFainted) {
 			const nextPokemon = this.state.player2.team.find(p => !p.isFainted);
 			if (nextPokemon) {
+				const fromName = this.state.player2.getActivePokemon().name;
 				const switchEvent = createPokemonSwitchEvent(
 					'player2',
 					this.state.player2.activePokemonIndex,
-					nextPokemon.index
+					nextPokemon.index,
+					fromName,
+					nextPokemon.name
 				);
 				events.push(switchEvent);
 			}
@@ -440,21 +495,21 @@ export class BattleController {
 			}
 		}
 		const winnerIsHost = (winnerIndex === 0 && this.isHost) || (winnerIndex === 1 && !this.isHost);
-		const activePokemonIndex = winner.activePokemonIndex;
+		const activeBattlePokemon = winner.getActivePokemon();
 		const winnerPlayerStr = winnerIndex === 0 ? 'player1' : 'player2';
 
 		if (winnerIsHost && this.inventoryManager) {
 			const selectedTeam = this.inventoryManager.getSelectedTeam();
-			if (selectedTeam && selectedTeam.length > activePokemonIndex) {
-				const pokemon = selectedTeam[activePokemonIndex];
-				const newLevel = pokemon.gainXp(totalXpAwarded);
+			const inventoryPokemon = selectedTeam.find(p => p.instanceId === activeBattlePokemon.instanceId);
+			if (inventoryPokemon) {
+				const newLevel = inventoryPokemon.gainXp(totalXpAwarded);
 				this.inventoryManager.setSelectedTeam(selectedTeam);
 				if (newLevel) {
-					const levelUpEvent = createLevelUpEvent(winnerPlayerStr, activePokemonIndex, newLevel);
+					const levelUpEvent = createLevelUpEvent(winnerPlayerStr, activeBattlePokemon.index, newLevel);
 					this.#notifyBattleEvent(levelUpEvent);
 				}
 			}
-		} else if (!winnerIsHost && this.isHost) this.webrtc.send(createXpGainMessage(totalXpAwarded, activePokemonIndex));
+		} else if (!winnerIsHost && this.isHost) this.webrtc.send(createXpGainMessage(totalXpAwarded, activeBattlePokemon.index));
 	}
 
 	async #detectSecondaryEffects(move, targetPokemon, playerIndex) {
@@ -557,10 +612,10 @@ export class BattleController {
 	}
 
 	#handleSwitchSelected(message) {
-		const { newPokemonIndex } = message;
+		const { pokemonIndex } = message;
 		this.state = this.state.clone({
 			player2: {
-				selectedSwitch: newPokemonIndex,
+				selectedSwitch: pokemonIndex,
 				hasActed: true
 			}
 		});

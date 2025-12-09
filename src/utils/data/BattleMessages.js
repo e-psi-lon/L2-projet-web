@@ -253,11 +253,13 @@ export const createPokemonFaintedEvent = (target, pokemonIndex) => ({
 	pokemonIndex
 });
 
-export const createPokemonSwitchEvent = (target, fromIndex, toIndex) => ({
+export const createPokemonSwitchEvent = (target, fromIndex, toIndex, fromName = null, toName = null) => ({
 	type: EventType.POKEMON_SWITCH,
 	target,
 	fromIndex,
-	toIndex
+	toIndex,
+	fromName,
+	toName
 });
 
 export const createMoveUsedEvent = (player, pokemonIndex, moveId, targetIndex) => ({

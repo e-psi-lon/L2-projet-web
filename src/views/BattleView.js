@@ -23,6 +23,9 @@ export default class BattleView extends BaseView {
 		this.previousYourPokemon = null;
 		this.previousPhase = null;
 		this.previousHasActed = null;
+		this.previousOpponentHp = null;
+		this.previousYourHp = null;
+		this.showTeamDisplay = false;
 	}
 
 	async render() {
@@ -147,17 +150,28 @@ export default class BattleView extends BaseView {
 		const yourPokemon = this.isHost ? state.player1.getActivePokemon() : state.player2.getActivePokemon();
 		const opponentPokemon = this.isHost ? state.player2.getActivePokemon() : state.player1.getActivePokemon();
 		const hasActed = this.isHost ? state.player1.hasActed : state.player2.hasActed;
+		const yourPokemonInstanceId = yourPokemon?.instanceId;
+		const opponentPokemonInstanceId = opponentPokemon?.instanceId;
+		const previousYourPokemonInstanceId = this.previousYourPokemon?.instanceId;
+		const previousOpponentPokemonInstanceId = this.previousOpponentPokemon?.instanceId;
 
-		if (opponentPokemon && (force || forceOpponent || this.previousOpponentPokemon !== opponentPokemon || this.previousOpponentName !== this.controller.opponentName)) {
+		if (yourPokemonInstanceId !== previousYourPokemonInstanceId)
+			this.previousYourHp = null;
+		if (opponentPokemonInstanceId !== previousOpponentPokemonInstanceId)
+			this.previousOpponentHp = null;
+
+		if (opponentPokemon && (force || forceOpponent || opponentPokemonInstanceId !== previousOpponentPokemonInstanceId || this.previousOpponentName !== this.controller.opponentName || (this.previousOpponentHp !== opponentPokemon.currentHp))) {
 			this.#renderOpponentSection(opponentPokemon, this.controller.opponentName);
 			this.previousOpponentPokemon = opponentPokemon;
+			this.previousOpponentHp = opponentPokemon.currentHp;
 			this.previousOpponentName = this.controller.opponentName;
 		}
 
-		if (yourPokemon && (force || forcePlayer || this.previousYourPokemon !== yourPokemon)) {
+		if (yourPokemon && (force || forcePlayer || yourPokemonInstanceId !== previousYourPokemonInstanceId || (this.previousYourHp !== yourPokemon.currentHp))) {
 			const accountName = this.appState.getCurrentAccountName();
 			this.#renderPlayerSection(yourPokemon, accountName);
 			this.previousYourPokemon = yourPokemon;
+			this.previousYourHp = yourPokemon.currentHp;
 		}
 
 		if (yourPokemon && (force || forceActionSection || this.previousPhase !== state.phase || this.previousHasActed !== hasActed)) {
@@ -173,7 +187,7 @@ export default class BattleView extends BaseView {
 		let player;
 		let activePokemon;
 
-		if (event.type === EventType.DAMAGE || event.type === EventType.STATUS_APPLY || event.type === EventType.STATUS_REMOVE || event.type === EventType.POKEMON_FAINTED) {
+		if (event.type === EventType.DAMAGE || event.type === EventType.STATUS_APPLY || event.type === EventType.STATUS_REMOVE || event.type === EventType.POKEMON_FAINTED || event.type === EventType.POKEMON_SWITCH) {
 			const isTarget1 = event.target === 'player1';
 			eventIsForOpponent = this.isHost ? !isTarget1 : isTarget1;
 			player = isTarget1 ? this.battleState.player1 : this.battleState.player2;
@@ -202,6 +216,12 @@ export default class BattleView extends BaseView {
 				break;
 			case EventType.POKEMON_FAINTED:
 				text = activePokemon ? `${activePokemon.name} fainted!` : 'Pokémon fainted!';
+				break;
+			case EventType.POKEMON_SWITCH:
+				text = event.fromName && event.toName 
+					? `Come back ${event.fromName}! Go ${event.toName}!`
+					: activePokemon ? `${activePokemon.name} appeared!` : 'Pokémon switched in!';
+				this.#updateBattle({ force: true });
 				break;
 			case EventType.STATUS_APPLY:
 				text = activePokemon ? `${activePokemon.name} is now ${event.status}!` : `Pokémon is now ${event.status}!`;
@@ -272,22 +292,66 @@ export default class BattleView extends BaseView {
 
 	#renderActionSection(phase, pokemon, hasActed) {
 		if (!pokemon) return;
-		if (phase === 'selection') render('action-container',
-			div({ className: 'grid grid-cols-2 gap-2' },
-				...pokemon.movePool.slice(0, 4).map(move =>
-					button({
-						onClick: () => this.controller.selectMove(move, 0),
-						disabled: hasActed,
-						className: hasActed
-							? 'px-4 py-2 rounded bg-gray-600 text-gray-400 font-semibold cursor-not-allowed'
-							: 'px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold transition'
-					}, move.move.name)
+		if (phase === 'selection') {
+			const state = this.battleState;
+			const playerTeam = this.isHost ? state.player1.team : state.player2.team;
+			const opponentActivePokemonIndex = this.isHost ? state.player2.activePokemonIndex : state.player1.activePokemonIndex;
+			const availableTeamMembers = playerTeam.filter(p => p.index !== pokemon.index && !p.isFainted);
+			
+			render('action-container',
+				div({ className: 'flex gap-3' },
+					div({ className: 'flex-1 grid grid-cols-2 gap-2' },
+						...pokemon.movePool.slice(0, 4).map(move =>
+							button({
+								onClick: () => this.controller.selectMove(move, opponentActivePokemonIndex),
+								disabled: hasActed,
+								className: hasActed
+									? 'px-4 py-2 rounded bg-gray-600 text-gray-400 font-semibold cursor-not-allowed'
+									: 'px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold transition'
+							}, move.move.name)
+						)
+					),
+					availableTeamMembers.length > 0 ? div({ className: 'flex flex-col gap-2 relative' },
+						button({
+							onClick: () => this.#toggleTeamDisplay(),
+							className: 'h-full px-4 py-2 rounded bg-purple-600 hover:bg-purple-500 text-white font-semibold transition'
+						}, 'Switch'),
+						this.showTeamDisplay ? div({ className: 'absolute bottom-full right-0 mb-2 bg-gray-900 border border-gray-700 rounded-lg p-3 space-y-1 min-w-[220px] z-10' },
+							div({ className: 'text-gray-300 text-xs font-semibold mb-2' }, 'Choose a Pokémon:'),
+							...availableTeamMembers.map((p, idx) =>
+								div({
+									key: `team-${idx}`,
+									className: 'p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-pointer transition flex justify-between items-center',
+									onClick: () => {
+										const currentName = pokemon.name;
+										const nextName = p.name;
+										this.controller.selectSwitch(p.index);
+										showToast(`Come back ${currentName}, go ${nextName}!`, { position: 'bottom-right' });
+										this.showTeamDisplay = false;
+										this.#updateBattle({ forceActionSection: true });
+									}
+								},
+									div({ className: 'flex-1' },
+										div({ className: 'text-white font-semibold' }, p.name),
+										div({ className: 'text-gray-400 text-sm' }, `HP: ${p.currentHp}/${p.maxHp}`)
+									),
+									div({ className: 'text-xs font-semibold text-green-500' }, 'Ready')
+								)
+							)
+						) : null
+					) : null
 				)
-			)
-		);
-		else render('action-container',
-			div({ className: 'text-center text-gray-400' }, 'Turn resolving...')
-		);
+			);
+		} else {
+			render('action-container',
+				div({ className: 'text-center text-gray-400' }, 'Turn resolving...')
+			);
+		}
+	}
+
+	#toggleTeamDisplay() {
+		this.showTeamDisplay = !this.showTeamDisplay;
+		this.#updateBattle({ forceActionSection: true });
 	}
 
 	destroy() {
