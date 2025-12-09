@@ -94,10 +94,10 @@ const renderAnswerSection = (answerInputContainer, { isAnswer, generatedAnswer, 
 					value: generatedAnswer,
 					readOnly: true,
 					onClick: (e) => e.target.select(),
-					className: 'flex-1 bg-gray-800 border border-green-600 rounded px-3 py-2 text-sm text-white min-h-[80px]'
+					className: 'flex-1 bg-gray-800 border border-green-600 rounded text-sm text-white'
 				}),
 				button({
-					className: 'bg-blue-600 hover:bg-blue-700 text-white rounded p-2 transition-colors',
+					className: 'bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex-shrink-0',
 					onClick: async () => {
 						await navigator.clipboard.writeText(generatedAnswer);
 					},
@@ -109,18 +109,18 @@ const renderAnswerSection = (answerInputContainer, { isAnswer, generatedAnswer, 
 	);
 	else if (answerError) render(answerInputContainer,
 		div({ className: 'flex flex-col gap-2' },
-			div({ className: 'flex items-start gap-2 bg-red-900 border border-red-600 rounded px-3 py-2' },
-				icon(AlertCircle, { className: 'w-5 h-5 text-red-400 flex-shrink-0 mt-0.5' }),
+			div({ className: 'flex items-start gap-2 bg-red-900 border border-red-600 rounded' },
+				icon(AlertCircle, { className: 'w-6 h-6 text-red-400 flex-shrink-0 mt-0.5' }),
 				p({ className: 'text-sm text-red-300' }, answerError)
 			),
 			div({ className: 'flex items-center gap-2' },
 				textarea({
 					id: isAnswer ? 'offerInput' : 'answerInput',
 					placeholder: isAnswer ? 'Paste the offer from the other player here...' : 'Paste the answer from the other player here...',
-					className: 'flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm text-white min-h-[100px]'
+					className: 'flex-1 bg-gray-800 border border-gray-600 rounded text-sm text-white'
 				}),
 				button({
-					className: 'bg-green-600 hover:bg-green-700 text-white rounded p-2 transition-colors',
+					className: 'bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex-shrink-0',
 					onClick: async () => await (isAnswer ? handleOfferInput : handleAnswerInput)(),
 					title: isAnswer ? 'Process offer and generate answer' : 'Process answer and complete connection'
 				}, icon(Check, { className: 'w-6 h-6' }))
@@ -132,10 +132,10 @@ const renderAnswerSection = (answerInputContainer, { isAnswer, generatedAnswer, 
 			textarea({
 				id: isAnswer ? 'offerInput' : 'answerInput',
 				placeholder: isAnswer ? 'Paste the offer from the other player here...' : 'Paste the answer from the other player here...',
-				className: 'flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm text-white min-h-[100px]'
+				className: 'flex-1 bg-gray-800 border border-gray-600 rounded text-sm text-white'
 			}),
 			button({
-				className: 'bg-green-600 hover:bg-green-700 text-white rounded p-2 transition-colors',
+				className: 'bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex-shrink-0',
 				onClick: async () => await (isAnswer ? handleOfferInput : handleAnswerInput)(),
 				title: isAnswer ? 'Process offer and generate answer' : 'Process answer and complete connection'
 			}, icon(Check, { className: 'w-6 h-6' }))
@@ -219,8 +219,10 @@ const ShowRtcInfoDialog = async (parent, handleClose, { isAnswer, infoPromise, r
 	let timerInterval = null;
 	let generatedAnswer = null;
 	let answerError = null;
+	const scrollableDiv = div({ className: 'flex flex-col gap-4 overflow-scroll' });
+	
 	if (infoPromise) {
-		renderLoading(parent, handleClose, isAnswer);
+		renderLoading(scrollableDiv, handleClose, isAnswer);
 		infos = await infoPromise;
 	}
 	const data = infos ? compressRTC(infos) : null;
@@ -229,7 +231,7 @@ const ShowRtcInfoDialog = async (parent, handleClose, { isAnswer, infoPromise, r
 	const timerBarContainer = div({ className: 'flex flex-col gap-1' });
 	const answerInputContainer = div({});
 	const renderUI = async () => {
-		await renderMainContent(parent, handleClose, { isAnswer, data: !isAnswer ? data : null, qrCodeContent, answerInputContainer, timerBarContainer, handleOfferInput: onOfferInput, generatedAnswer });
+		await renderMainContent(scrollableDiv, handleClose, { isAnswer, data: !isAnswer ? data : null, qrCodeContent, answerInputContainer, timerBarContainer, handleOfferInput: onOfferInput, generatedAnswer });
 		renderAnswerSection(answerInputContainer, { isAnswer, generatedAnswer, answerError, handleOfferInput: onOfferInput, handleAnswerInput: onAnswerInput });
 	};
 
@@ -243,8 +245,8 @@ const ShowRtcInfoDialog = async (parent, handleClose, { isAnswer, infoPromise, r
 		}
 	};
 
-	const onOfferInput = async () => await handleOfferInput(parent, handleClose, rtcManager, updateState, renderUI, () => onConnectionReady(rtcManager, handleClose, timerInterval));
-	const onAnswerInput = async () => await handleAnswerInput(parent, rtcManager, updateState, renderUI, () => onConnectionReady(rtcManager, handleClose, timerInterval));
+	const onOfferInput = async () => await handleOfferInput(scrollableDiv, handleClose, rtcManager, updateState, renderUI, () => onConnectionReady(rtcManager, handleClose, timerInterval));
+	const onAnswerInput = async () => await handleAnswerInput(scrollableDiv, rtcManager, updateState, renderUI, () => onConnectionReady(rtcManager, handleClose, timerInterval));
 
 	await renderUI();
 	const updateTimerBar = () => {
@@ -277,6 +279,7 @@ const ShowRtcInfoDialog = async (parent, handleClose, { isAnswer, infoPromise, r
 		}
 	}, 1000);
 
+	render(parent, scrollableDiv);
 	return parent;
 }
 

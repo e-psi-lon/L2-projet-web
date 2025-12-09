@@ -28,7 +28,7 @@ export const displayDialog = async ({ DialogComponentOrContent, parent, onClose,
 
 	dialogElement = dialog({
 			id: 'modal-dialog',
-			className: 'max-w-[90vw] max-h-[90vh] m-auto rounded-lg overflow-hidden',
+			className: 'max-w-[90vw] max-h-[90vh] m-auto rounded-lg',
 			onCancel: () => cleanup('cancel'),
 			onClose: () => cleanup('dismiss'),
 			onClick: (e) => {
