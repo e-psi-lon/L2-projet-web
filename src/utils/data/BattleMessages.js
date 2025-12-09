@@ -30,7 +30,8 @@ export const EventType = {
 	MOVE_FAILED: 'move_failed',
 	WEATHER_CHANGE: 'weather_change',
 	TURN_START_EVENT: 'turn_start_event',
-	TURN_END_EVENT: 'turn_end_event'
+	TURN_END_EVENT: 'turn_end_event',
+	LEVEL_UP: 'level_up'
 };
 
 /**
@@ -286,6 +287,13 @@ export const createWeatherChangeEvent = (weatherType, turnsRemaining) => ({
 	type: EventType.WEATHER_CHANGE,
 	weatherType,
 	turnsRemaining
+});
+
+export const createLevelUpEvent = (target, pokemonIndex, newLevel) => ({
+	type: EventType.LEVEL_UP,
+	target,
+	pokemonIndex,
+	newLevel
 });
 
 export class MessageValidator {

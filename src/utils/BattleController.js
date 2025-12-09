@@ -17,7 +17,8 @@ import {
 	createWeatherChangeEvent,
 	createStatusApplyEvent,
 	createStatChangeEvent,
-	createXpGainMessage
+	createXpGainMessage,
+	createLevelUpEvent
 } from '@data/BattleMessages.js';
 
 
@@ -440,13 +441,18 @@ export class BattleController {
 		}
 		const winnerIsHost = (winnerIndex === 0 && this.isHost) || (winnerIndex === 1 && !this.isHost);
 		const activePokemonIndex = winner.activePokemonIndex;
+		const winnerPlayerStr = winnerIndex === 0 ? 'player1' : 'player2';
 
 		if (winnerIsHost && this.inventoryManager) {
 			const selectedTeam = this.inventoryManager.getSelectedTeam();
 			if (selectedTeam && selectedTeam.length > activePokemonIndex) {
 				const pokemon = selectedTeam[activePokemonIndex];
-				pokemon.gainXp(totalXpAwarded);
+				const newLevel = pokemon.gainXp(totalXpAwarded);
 				this.inventoryManager.setSelectedTeam(selectedTeam);
+				if (newLevel) {
+					const levelUpEvent = createLevelUpEvent(winnerPlayerStr, activePokemonIndex, newLevel);
+					this.#notifyBattleEvent(levelUpEvent);
+				}
 			}
 		} else if (!winnerIsHost && this.isHost) this.webrtc.send(createXpGainMessage(totalXpAwarded, activePokemonIndex));
 	}
@@ -633,8 +639,12 @@ export class BattleController {
 		const selectedTeam = this.inventoryManager.getSelectedTeam();
 		if (selectedTeam && selectedTeam.length > pokemonIndex) {
 			const pokemon = selectedTeam[pokemonIndex];
-			pokemon.gainXp(xpAmount);
+			const newLevel = pokemon.gainXp(xpAmount);
 			this.inventoryManager.setSelectedTeam(selectedTeam);
+			if (newLevel) {
+				const levelUpEvent = createLevelUpEvent('player2', pokemonIndex, newLevel);
+				this.#notifyBattleEvent(levelUpEvent);
+			}
 		}
 	}
 

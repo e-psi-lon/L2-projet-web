@@ -212,6 +212,9 @@ export default class BattleView extends BaseView {
 			case EventType.WEATHER_CHANGE:
 				text = event.weatherType ? `Weather changed to ${event.weatherType}!` : 'Weather cleared!';
 				break;
+			case EventType.LEVEL_UP:
+				text = activePokemon ? `${activePokemon.name} leveled up to Lv. ${event.newLevel}!` : `Pokémon leveled up to Lv. ${event.newLevel}!`;
+				break;
 			default:
 				return;
 		}

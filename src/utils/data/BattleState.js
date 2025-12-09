@@ -148,6 +148,7 @@ export class BattleState {
 			case EventType.STATUS_DAMAGE:
 			case EventType.TURN_START_EVENT:
 			case EventType.TURN_END_EVENT:
+			case EventType.LEVEL_UP:
 				newState.eventLog.push(event);
 				return newState;
 			default:
