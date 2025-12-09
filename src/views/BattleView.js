@@ -45,7 +45,8 @@ export default class BattleView extends BaseView {
 			const initialState = new BattleState(player1Id, player2Id, player1Team, player2Team);
 			this.battleState = initialState;
 
-			this.controller = new BattleController(this.rtc, this.isHost, initialState, this.api);
+			const inventory = this.appState.getInventory();
+			this.controller = new BattleController(this.rtc, this.isHost, initialState, this.api, inventory);
 
 			this.controller.onStateChange((state) => {
 				this.battleState = state;

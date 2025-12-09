@@ -16,16 +16,18 @@ import {
 	createPokemonSwitchEvent,
 	createWeatherChangeEvent,
 	createStatusApplyEvent,
-	createStatChangeEvent
+	createStatChangeEvent,
+	createXpGainMessage
 } from '@data/BattleMessages.js';
 
 
 export class BattleController {
-	constructor(webrtc, isHost, initialState, api) {
+	constructor(webrtc, isHost, initialState, api, inventoryManager = null) {
 		this.webrtc = webrtc;
 		this.isHost = isHost;
 		this.state = initialState;
 		this.api = api;
+		this.inventoryManager = inventoryManager;
 
 		this.playerIndex = isHost ? 0 : 1;
 		this.opponentName = null;
@@ -436,10 +438,17 @@ export class BattleController {
 				totalXpAwarded += xpGain;
 			}
 		}
-		const activeWinnerPokemon = winner.getActivePokemon();
-		if (activeWinnerPokemon) {
-			activeWinnerPokemon.gainXp(totalXpAwarded);
-		}
+		const winnerIsHost = (winnerIndex === 0 && this.isHost) || (winnerIndex === 1 && !this.isHost);
+		const activePokemonIndex = winner.activePokemonIndex;
+
+		if (winnerIsHost && this.inventoryManager) {
+			const selectedTeam = this.inventoryManager.getSelectedTeam();
+			if (selectedTeam && selectedTeam.length > activePokemonIndex) {
+				const pokemon = selectedTeam[activePokemonIndex];
+				pokemon.gainXp(totalXpAwarded);
+				this.inventoryManager.setSelectedTeam(selectedTeam);
+			}
+		} else if (!winnerIsHost && this.isHost) this.webrtc.send(createXpGainMessage(totalXpAwarded, activePokemonIndex));
 	}
 
 	async #detectSecondaryEffects(move, targetPokemon, playerIndex) {
@@ -513,6 +522,9 @@ export class BattleController {
 					break;
 				case MessageType.SWITCH_SELECTED:
 					if (this.isHost) this.#handleSwitchSelected(message);
+					break;
+				case MessageType.XP_GAIN:
+					this.#handleXpGain(message);
 					break;
 				default:
 					console.warn(`Unknown message type: ${message.type}`);
@@ -608,6 +620,21 @@ export class BattleController {
 		} catch (error) {
 			console.error('Failed to parse full sync:', error);
 			this.webrtc.send(createErrorMessage('SYNC_PARSE_ERROR', error.message));
+		}
+	}
+
+	#handleXpGain(message) {
+		const { xpAmount, pokemonIndex } = message;
+		if (!this.inventoryManager) {
+			console.warn('No inventory manager to apply XP gain');
+			return;
+		}
+
+		const selectedTeam = this.inventoryManager.getSelectedTeam();
+		if (selectedTeam && selectedTeam.length > pokemonIndex) {
+			const pokemon = selectedTeam[pokemonIndex];
+			pokemon.gainXp(xpAmount);
+			this.inventoryManager.setSelectedTeam(selectedTeam);
 		}
 	}
 

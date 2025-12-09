@@ -8,6 +8,7 @@ export const MessageType = {
 	BATTLE_END: 'battle_end',
 	MOVE_SELECTED: 'move_selected',
 	SWITCH_SELECTED: 'switch_selected',
+	XP_GAIN: 'xp_gain',
 	FULL_SYNC: 'full_sync',
 	SYNC_REQUEST: 'sync_request',
 	STATE_HASH: 'state_hash',
@@ -132,6 +133,18 @@ export const createMoveSelectedMessage = (moveId, targetIndex) => ({
 export const createSwitchSelectedMessage = (newPokemonIndex) => ({
 	type: MessageType.SWITCH_SELECTED,
 	newPokemonIndex,
+	timestamp: Date.now()
+});
+
+/**
+ * XP Gain - HOST ONLY
+ * Host sends XP gain event to guest after guest wins
+ * { type: 'xp_gain', xpAmount, pokemonIndex, timestamp }
+ */
+export const createXpGainMessage = (xpAmount, pokemonIndex) => ({
+	type: MessageType.XP_GAIN,
+	xpAmount,
+	pokemonIndex,
 	timestamp: Date.now()
 });
 
