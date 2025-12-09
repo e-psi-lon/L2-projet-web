@@ -130,4 +130,36 @@ export default class AppState {
 			.filter(l => l.type === 'stateChange')
 			.forEach(l => l.callback(this));
 	}
+
+	saveBattleToHistory(battleState, winner, loser) {
+		try {
+			const history = JSON.parse(localStorage.getItem('pokemon-battle-history') || '{}');
+			history[battleState.battleId] = {
+				battleId: battleState.battleId,
+				timestamp: Date.now(),
+				player1Id: battleState.player1.accountId,
+				player2Id: battleState.player2.accountId,
+				winner,
+				loser,
+				stateJson: JSON.stringify(battleState.toJSON())
+			};
+			localStorage.setItem('pokemon-battle-history', JSON.stringify(history));
+		} catch (error) {
+			console.error('Failed to save battle history:', error);
+		}
+	}
+
+	getBattleHistory() {
+		try {
+			return JSON.parse(localStorage.getItem('pokemon-battle-history') || '{}');
+		} catch (error) {
+			console.error('Failed to load battle history:', error);
+			return {};
+		}
+	}
+
+	getBattleById(battleId) {
+		const history = this.getBattleHistory();
+		return history[battleId];
+	}
 }

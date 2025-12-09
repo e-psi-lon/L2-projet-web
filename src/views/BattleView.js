@@ -1,12 +1,16 @@
 import Pokemon from "@data/Pokemon.js";
 import BaseView from "@ui/BaseView.js";
+import MainMenuView from "@views/MainMenuView.js";
 import BattleController from "@utils/BattleController.js";
 import { BattleInstancePokemon, BattleState } from "@data/BattleState.js";
 import { createAccountNameMessage, createTeamSelectedMessage, EventType } from "@data/BattleMessages.js";
 import { div, button, img } from "@ui/dom.js";
 import { render } from "@ui/rendering.js";
 import StatBar from "@components/StatBar.js";
+import ViewOpenerButton from "@components/ViewOpenerButton.js";
+import { icon } from "@ui/icons.js";
 import showToast from "@utils/ui/toast.js";
+import { ArrowLeft } from 'lucide';
 
 export default class BattleView extends BaseView {
 	constructor(app, appState) {
@@ -54,6 +58,7 @@ export default class BattleView extends BaseView {
 			this.controller.onStateChange((state) => {
 				this.battleState = state;
 				this.#updateBattle();
+				if (state.isOver()) this.#handleBattleEnd();
 			});
 			this.controller.onResolveUsername((username) => {
 				this.#renderOpponentSection(
@@ -352,6 +357,38 @@ export default class BattleView extends BaseView {
 	#toggleTeamDisplay() {
 		this.showTeamDisplay = !this.showTeamDisplay;
 		this.#updateBattle({ forceActionSection: true });
+	}
+
+	#handleBattleEnd() {
+		const winner = this.battleState.getWinner();
+		const loser = winner === 0 ? 1 : 0;
+		const isVictory = this.isHost ? winner === 0 : winner === 1;
+		const message = isVictory ? 'Victory!' : 'Defeat!';
+		this.appState.saveBattleToHistory(this.battleState, winner, loser);
+		
+		render(this.app,
+			div({ className: 'flex items-center justify-center h-screen' },
+				div({ className: 'text-center space-y-8' },
+					div({},
+						div({ className: `text-6xl font-bold ${isVictory ? 'text-green-500' : 'text-red-500'}` }, message),
+						div({ className: 'text-gray-400 mt-4' }, 'Battle ended')
+					),
+					ViewOpenerButton(
+						div(),
+						{
+							label: div({ className: 'flex items-center justify-center gap-3' },
+								icon(ArrowLeft, { className: 'w-6 h-6' }),
+								'Back to Menu'
+							),
+							ViewClass: MainMenuView,
+							appContainer: this.app,
+							appState: this.appState,
+							className: 'px-6 py-3 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold transition'
+						}
+					)
+				)
+			)
+		);
 	}
 
 	destroy() {
