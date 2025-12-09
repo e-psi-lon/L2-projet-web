@@ -30,6 +30,8 @@ export default class BattleView extends BaseView {
 		this.previousOpponentHp = null;
 		this.previousYourHp = null;
 		this.showTeamDisplay = false;
+		this.showItemDisplay = false;
+		this.inventoryManager = null;
 	}
 
 	async render() {
@@ -53,6 +55,7 @@ export default class BattleView extends BaseView {
 			this.battleState = initialState;
 
 			const inventory = this.appState.getInventory();
+			this.inventoryManager = inventory;
 			this.controller = new BattleController(this.rtc, this.isHost, initialState, this.api, inventory);
 
 			this.controller.onStateChange((state) => {
@@ -240,6 +243,10 @@ export default class BattleView extends BaseView {
 			case EventType.LEVEL_UP:
 				text = activePokemon ? `${activePokemon.name} leveled up to Lv. ${event.newLevel}!` : `Pokémon leveled up to Lv. ${event.newLevel}!`;
 				break;
+			case EventType.ITEM_USED:
+				// TODO: Get item name from inventory or API
+				text = `Item was used!`;
+				break;
 			default:
 				return;
 		}
@@ -302,9 +309,42 @@ export default class BattleView extends BaseView {
 			const playerTeam = this.isHost ? state.player1.team : state.player2.team;
 			const opponentActivePokemonIndex = this.isHost ? state.player2.activePokemonIndex : state.player1.activePokemonIndex;
 			const availableTeamMembers = playerTeam.filter(p => p.index !== pokemon.index && !p.isFainted);
+			const inventoryItems = this.inventoryManager?.getItems() || [];
+			const itemsInBattle = inventoryItems.filter(item => item.quantity > 0);
 			
 			render('action-container',
 				div({ className: 'flex gap-3' },
+					div({ className: 'flex flex-col gap-2 relative' },
+						button({
+							onClick: () => this.#toggleItemDisplay(),
+							disabled: itemsInBattle.length === 0,
+							className: itemsInBattle.length === 0
+								? 'h-full px-4 py-2 rounded bg-gray-600 text-gray-400 font-semibold cursor-not-allowed'
+								: 'h-full px-4 py-2 rounded bg-green-600 hover:bg-green-500 text-white font-semibold transition'
+						}, 'Item'),
+						itemsInBattle.length > 0 && this.showItemDisplay ? div({ className: 'absolute bottom-full left-0 mb-2 bg-gray-900 border border-gray-700 rounded-lg p-3 space-y-1 min-w-[220px] z-10' },
+							div({ className: 'text-gray-300 text-xs font-semibold mb-2' }, 'Use an item:'),
+							...itemsInBattle.map((item, idx) =>
+								div({
+									key: `item-${idx}`,
+									className: 'p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-pointer transition flex justify-between items-center',
+									onClick: () => {
+										// TODO: Determine target index (0 for own active, 1 for opponent active, etc.)
+										this.controller.selectItem(item.id, 0);
+										showToast(`Used ${item.name}!`, { position: 'bottom-right' });
+										this.showItemDisplay = false;
+										this.#updateBattle({ forceActionSection: true });
+									}
+								},
+									div({ className: 'flex-1' },
+										div({ className: 'text-white font-semibold' }, item.name),
+										div({ className: 'text-gray-400 text-sm' }, `x${item.quantity}`)
+									),
+									div({ className: 'text-xs font-semibold text-green-500' }, 'Use')
+								)
+							)
+						) : null
+					),
 					div({ className: 'flex-1 grid grid-cols-2 gap-2' },
 						...pokemon.movePool.slice(0, 4).map(move =>
 							button({
@@ -356,6 +396,11 @@ export default class BattleView extends BaseView {
 
 	#toggleTeamDisplay() {
 		this.showTeamDisplay = !this.showTeamDisplay;
+		this.#updateBattle({ forceActionSection: true });
+	}
+
+	#toggleItemDisplay() {
+		this.showItemDisplay = !this.showItemDisplay;
 		this.#updateBattle({ forceActionSection: true });
 	}
 

@@ -18,7 +18,8 @@ import {
 	createStatusApplyEvent,
 	createStatChangeEvent,
 	createXpGainMessage,
-	createLevelUpEvent
+	createLevelUpEvent,
+	createItemUsedEvent
 } from '@data/BattleMessages.js';
 
 
@@ -103,6 +104,38 @@ export class BattleController {
 			this.startTurn().catch(err => console.error('Error starting turn:', err));
 	}
 
+	selectItem(itemId, targetPokemonIndex) {
+		const player = this.isHost ? this.state.player1 : this.state.player2;
+		
+		// TODO: Validate item exists and has quantity
+		if (!this.inventoryManager) {
+			console.warn('No inventory manager available');
+			return;
+		}
+		
+		player.selectedItem = {
+			itemId,
+			targetPokemonIndex
+		};
+		player.hasActed = true;
+
+		if (!this.isHost) try {
+			this.webrtc.send({
+				type: MessageType.ITEM_USED,
+				itemId,
+				targetPokemonIndex,
+				timestamp: Date.now()
+			});
+		} catch (error) {
+			console.warn('Failed to send item selection:', error);
+		}
+
+		this.#notifyListeners();
+
+		if (this.state.player1.hasActed && this.state.player2.hasActed)
+			this.startTurn().catch(err => console.error('Error starting turn:', err));
+	}
+
 	selectSwitch(pokemonIndex) {
 		const player = this.isHost ? this.state.player1 : this.state.player2;
 		const targetPokemon = player.team[pokemonIndex];
@@ -177,6 +210,19 @@ export class BattleController {
 			);
 			events.push(switchEvent);
 			this.state = this.state.applyEvent(switchEvent);
+		}
+
+		// TODO: Handle item usage - create ITEM_USED events
+		if (this.state.player1.selectedItem) {
+			const itemEvent = createItemUsedEvent('player1', this.state.player1.selectedItem.itemId, this.state.player1.selectedItem.targetPokemonIndex);
+			events.push(itemEvent);
+			// TODO: Apply item effect to target Pokemon
+		}
+
+		if (this.state.player2.selectedItem) {
+			const itemEvent = createItemUsedEvent('player2', this.state.player2.selectedItem.itemId, this.state.player2.selectedItem.targetPokemonIndex);
+			events.push(itemEvent);
+			// TODO: Apply item effect to target Pokemon
 		}
 
 		const moveActions = [];
@@ -581,10 +627,13 @@ export class BattleController {
 				case MessageType.MOVE_SELECTED:
 					if (this.isHost) this.#handleMoveSelected(message);
 					break;
-				case MessageType.SWITCH_SELECTED:
-					if (this.isHost) this.#handleSwitchSelected(message);
-					break;
-				case MessageType.XP_GAIN:
+			case MessageType.SWITCH_SELECTED:
+				if (this.isHost) this.#handleSwitchSelected(message);
+				break;
+			case MessageType.ITEM_USED:
+				if (this.isHost) this.#handleItemUsed(message);
+				break;
+			case MessageType.XP_GAIN:
 					this.#handleXpGain(message);
 					break;
 				default:
@@ -616,6 +665,22 @@ export class BattleController {
 		this.state = this.state.clone({
 			player2: {
 				selectedSwitch: pokemonIndex,
+				hasActed: true
+			}
+		});
+		this.#notifyListeners();
+
+		if (this.state.player1.hasActed && this.state.player2.hasActed) {
+			this.startTurn().catch(err => console.error('Error starting turn:', err));
+		}
+	}
+
+	#handleItemUsed(message) {
+		const { itemId, targetPokemonIndex } = message;
+		// TODO: Validate item exists and player has it
+		this.state = this.state.clone({
+			player2: {
+				selectedItem: { itemId, targetPokemonIndex },
 				hasActed: true
 			}
 		});
