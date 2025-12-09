@@ -168,12 +168,21 @@ export default class BattleView extends BaseView {
 
 	#displayEventToast(event) {
 		let text = '';
+		let eventIsForOpponent;
+		let player;
+		let activePokemon;
 
-		const eventIsForOpponent = this.isHost ? event.player === 1 : event.player === 0;
+		if (event.type === EventType.DAMAGE || event.type === EventType.STATUS_APPLY || event.type === EventType.STATUS_REMOVE || event.type === EventType.POKEMON_FAINTED) {
+			const isTarget1 = event.target === 'player1';
+			eventIsForOpponent = this.isHost ? !isTarget1 : isTarget1;
+			player = isTarget1 ? this.battleState.player1 : this.battleState.player2;
+		} else {
+			eventIsForOpponent = this.isHost ? event.player === 1 : event.player === 0;
+			player = event.player === 0 ? this.battleState.player1 : this.battleState.player2;
+		}
+
+		activePokemon = player ? player.getActivePokemon() : null;
 		const position = eventIsForOpponent ? 'top-left' : 'bottom-right';
-
-		const player = event.player === 0 ? this.battleState.player1 : this.battleState.player2;
-		const activePokemon = player ? player.getActivePokemon() : null;
 		const battleContainer = document.getElementById('battle-container');
 
 		switch (event.type) {
@@ -188,7 +197,7 @@ export default class BattleView extends BaseView {
 				text = activePokemon ? `${activePokemon.name} missed!` : 'Attack missed!';
 				break;
 			case EventType.DAMAGE:
-				text = `${event.amount || event.newHp || '?'} damage dealt!`;
+				text = activePokemon ? `${activePokemon.name} took ${event.amount} damage!` : `${event.amount} damage dealt!`;
 				break;
 			case EventType.POKEMON_FAINTED:
 				text = activePokemon ? `${activePokemon.name} fainted!` : 'Pokémon fainted!';
@@ -211,7 +220,7 @@ export default class BattleView extends BaseView {
 			showToast({
 				text,
 				color: eventIsForOpponent ? 'bg-orange-600' : 'bg-blue-600',
-				duration: 4000,
+				duration: 6000,
 				position,
 				parent: battleContainer || document.body
 			});
